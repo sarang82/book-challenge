@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/bottom_nav_bar.dart';
 
 void main() {
   runApp(const FigmaToCodeApp());
@@ -63,7 +64,7 @@ class HomeScreen extends StatelessWidget {
           _buildMainCard(),
           const SizedBox(height: 20),
           Expanded(child: _buildImageSection(screenWidth)),
-          _buildBottomNavBar(),
+          BottomNavBar(currentIndex: 2, onTap: (int value) {  },),
         ],
       ),
     );
@@ -194,22 +195,5 @@ Widget _buildImageSection(double width) {
         fit: BoxFit.cover,
       ),
     ),
-  );
-}
-
-Widget _buildBottomNavBar() {
-  return BottomNavigationBar(
-    type: BottomNavigationBarType.fixed,
-    selectedItemColor: Colors.black,
-    unselectedItemColor: Colors.grey,
-    backgroundColor: Colors.white,
-    items: const [
-      BottomNavigationBarItem(icon: Icon(Icons.timer), label: '타이머'),
-      BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: '챌린지'),
-      BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-      BottomNavigationBarItem(icon: Icon(Icons.library_books), label: '서재'),
-      BottomNavigationBarItem(icon: Icon(Icons.person), label: '프로필'),
-    ],
-    currentIndex: 2, // 홈 선택
   );
 }

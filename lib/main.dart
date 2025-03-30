@@ -1,3 +1,4 @@
+import 'package:book_tracking_app/presentation/screens/sign_up_screen.dart';
 import 'package:flutter/material.dart';
 import 'presentation/screens/home_screen.dart';
 
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: HomeScreen(),
+      home: SignUpScreen(), //HomeScreen()
     );
   }
 }
