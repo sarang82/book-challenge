@@ -11,6 +11,20 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+#추가함
+android/
+ios/
+linux/
+macos/
+web/
+windows/
+.gitignore
+.metadata
+README.md
+analysis_options.yaml
+pubspec.lock
+pubspec.yaml
+
 
 # IntelliJ related
 *.iml
