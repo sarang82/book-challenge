@@ -190,7 +190,7 @@ Widget _buildImageSection(double width) {
     decoration: BoxDecoration(
       image: const DecorationImage(
         image: AssetImage(
-          'assets/images/wave.png'
+            'assets/images/wave.png'
         ),
         fit: BoxFit.cover,
       ),
