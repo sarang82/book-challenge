@@ -43,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView( // 🟢 스크롤 가능하도록 수정
+        child: SingleChildScrollView( //스크롤 가능하도록 수정
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
