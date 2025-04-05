@@ -1,3 +1,4 @@
+import 'package:book_tracking_app/screens/challenge_add_screnn.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -78,6 +79,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/timer': (context) => const TimerScreen(), // 타이머 화면 추가
         '/challenge': (context) => const ChallengeScreen(), // 챌린지 화면 추가
+        '/newChallenge' : (context) => const ChallengeAddScreen(),
       },
     );
   }

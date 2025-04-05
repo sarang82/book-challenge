@@ -413,24 +413,30 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text('78%', style: TextStyle(color: Colors.black)),
             ),
             const SizedBox(height: 15),
-            Container(
-              width: double.infinity,
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEE798),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: const Center(
-                child: Text(
-                  '새 챌린지 시작하기',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/newChallenge');
+              },
+              child: Container(
+                width: double.infinity,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE798),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: const Center(
+                  child: Text(
+                    '새 챌린지 시작하기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ),
-            ),
+            )
+
           ],
         ),
       ),
