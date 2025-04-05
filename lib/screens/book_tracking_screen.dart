@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/book_data_service.dart';
 import '../services/firestore_service.dart';
+import '../widgets/bottom_nav_bar.dart';
+import '../main.dart'; // 글로벌 BookDataService 인스턴스 접근용
 
 class BookTrackingScreen extends StatefulWidget {
   const BookTrackingScreen({super.key});
@@ -12,28 +14,29 @@ class BookTrackingScreen extends StatefulWidget {
 }
 
 class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTickerProviderStateMixin {
-  final BookDataService _bookDataService = BookDataService();
+  // main.dart에서 정의한 글로벌 인스턴스 사용
+  final BookDataService _bookDataService = bookDataService;
   final FirestoreService _firestoreService = FirestoreService();
 
   bool _isLoading = true;
+  bool _isRefreshing = false;
   late TabController _tabController;
-  int _selectedIndex = 3;
+  int _selectedIndex = 3; // 서재 화면은 인덱스 3
 
-  // 스트림 구독 관리
-  Stream<QuerySnapshot>? bestsellersStream;
-  Stream<QuerySnapshot>? newReleasesStream;
-  Stream<QuerySnapshot>? recommendedBooksStream;
+  // 데이터 저장
+  Map<String, List<Map<String, dynamic>>> _bookData = {
+    'bestsellers': [],
+    'newReleases': [],
+    'recommendedBooks': []
+  };
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Firebase 데이터 초기화 및 업데이트
-    _initializeData();
-
-    // Firestore 스트림 설정
-    _setupStreams();
+    // 초기 데이터 로드
+    _loadInitialData();
   }
 
   @override
@@ -42,65 +45,80 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
     super.dispose();
   }
 
-  Future<void> _initializeData() async {
+  // 초기 데이터 로드 (최적화된 방식)
+  Future<void> _loadInitialData() async {
+    if (_isRefreshing) return; // 이미 새로고침 중이면 중복 호출 방지
+
+    setState(() {
+      _isLoading = true;
+      _isRefreshing = true;
+    });
+
     try {
-      // 데이터 최신화
-      await _bookDataService.updateBookData();
+      // 초기 데이터 로드 (기본적으로 5개 책 로드)
+      final data = await _bookDataService.getInitialData();
 
       if (mounted) {
         setState(() {
+          // 각 카테고리 데이터가 있는 경우에만 업데이트
+          if (data['bestsellers']!.isNotEmpty) {
+            _bookData['bestsellers'] = data['bestsellers']!;
+          }
+          if (data['newReleases']!.isNotEmpty) {
+            _bookData['newReleases'] = data['newReleases']!;
+          }
+          if (data['recommendedBooks']!.isNotEmpty) {
+            _bookData['recommendedBooks'] = data['recommendedBooks']!;
+          }
+
           _isLoading = false;
+          _isRefreshing = false;
         });
       }
     } catch (e) {
       if (kDebugMode) {
-        print('도서 데이터 업데이트 오류: $e');
+        print('초기 도서 데이터 로드 오류: $e');
       }
-
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _isRefreshing = false;
         });
       }
     }
   }
 
-  void _setupStreams() {
-    // Firestore에서 데이터 스트림 가져오기
-    bestsellersStream = _firestoreService.getBestsellers();
-    newReleasesStream = _firestoreService.getNewReleases();
-    recommendedBooksStream = _firestoreService.getRecommendedBooks();
-  }
-
+  // 하단 내비게이션 바 탭 핸들러
   void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
+    if (index == _selectedIndex) return; // 같은 탭 선택 시 무시
 
-      // 네비게이션 로직
-      Future.microtask(() {
-        if (!mounted) return;
-
-        switch (index) {
-          case 0:
-            Navigator.pushNamed(context, '/timer');
-            break;
-          case 1:
-            Navigator.pushNamed(context, '/challenge');
-            break;
-          case 2:
-            Navigator.pushNamed(context, '/');
-            break;
-          case 3:
-            Navigator.pushNamed(context, '/library');
-            break;
-          case 4:
-            Navigator.pushNamed(context, '/profile');
-            break;
-        }
-      });
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, '/timer');
+        break;
+      case 1:
+      // 챌린지 화면으로 이동
+        Navigator.pushReplacementNamed(context, '/challenge');
+        break;
+      case 2:
+        Navigator.pushReplacementNamed(context, '/home');
+        break;
+      case 3:
+      // 현재 화면이므로 아무 작업도 하지 않음
+        break;
+      case 4:
+        Navigator.pushReplacementNamed(context, '/profile');
+        break;
+      default:
+      // 구현되지 않은 탭
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('준비 중인 기능입니다.'))
+        );
     }
+
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
@@ -127,18 +145,7 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
           _buildMyLibraryView(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.white,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.timer), label: '타이머'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: '챌린지'),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.library_books), label: '서재'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: '프로필'),
-        ],
+      bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
@@ -151,7 +158,7 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
 
   Widget _buildCustomBookView() {
     return RefreshIndicator(
-      onRefresh: _initializeData,
+      onRefresh: _loadInitialData,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
@@ -159,9 +166,9 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildFirestoreBookSection('베스트셀러', bestsellersStream),
-              _buildFirestoreBookSection('신간 도서', newReleasesStream),
-              _buildPlaceholderSection('AI 추천 도서'),
+              _buildBookSection('베스트셀러', _bookData['bestsellers'] ?? []),
+              _buildBookSection('신간 도서', _bookData['newReleases'] ?? []),
+              _buildBookSection('추천 도서', _bookData['recommendedBooks'] ?? []),
             ],
           ),
         ),
@@ -178,7 +185,7 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
     );
   }
 
-  Widget _buildFirestoreBookSection(String title, Stream<QuerySnapshot>? stream) {
+  Widget _buildBookSection(String title, List<Map<String, dynamic>> books) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -186,38 +193,13 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
         const SizedBox(height: 10),
         SizedBox(
           height: 200,
-          child: StreamBuilder<QuerySnapshot>(
-            stream: stream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Text('오류: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
-                );
-              }
-
-              final docs = snapshot.data?.docs ?? [];
-
-              if (docs.isEmpty) {
-                return const Center(
-                  child: Text('데이터가 없습니다'),
-                );
-              }
-
-              // 최대 5개의 책만 표시
-              final limitedDocs = docs.length > 5 ? docs.sublist(0, 5) : docs;
-
-              return ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: limitedDocs.length,
-                itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  return _buildBookItem(data);
-                },
-              );
+          child: books.isEmpty
+              ? const Center(child: Text('데이터가 없습니다'))
+              : ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: books.length,
+            itemBuilder: (context, index) {
+              return _buildBookItem(books[index]);
             },
           ),
         ),
@@ -226,75 +208,61 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
     );
   }
 
-  Widget _buildPlaceholderSection(String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        const SizedBox(
-          height: 200,
-          child: Center(
-            child: Text('준비 중입니다', style: TextStyle(fontSize: 16, color: Colors.grey)),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
   Widget _buildBookItem(Map<String, dynamic> book) {
+    // 메모리 최적화: 이미지 캐싱 및 최적화
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: InkWell(
-        onTap: () {
-          // 나중에 상세 화면으로 이동하는 기능 추가 예정
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('도서 상세 페이지는 준비 중입니다')),
-          );
-        },
-        child: Column(
-          children: [
-            Container(
-              width: 100,
-              height: 150,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 2),
+      child: Column(
+        children: [
+          Container(
+            width: 100,
+            height: 150,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Image.network(
+              book['coverUrl'] ?? 'https://via.placeholder.com/100x150',
+              fit: BoxFit.cover,
+              // 메모리 캐싱 활성화
+              cacheWidth: 200, // 메모리 최적화를 위한 캐시 크기 제한
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
                   ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: FadeInImage.assetNetwork(
-                placeholder: 'assets/book_placeholder.png', // 플레이스홀더 이미지 추가 필요
-                image: book['coverUrl'] ?? 'https://placehold.co/100x150',
-                fit: BoxFit.cover,
-                fadeInDuration: const Duration(milliseconds: 300),
-                imageErrorBuilder: (context, error, stackTrace) {
-                  return Image.network(
-                    'https://placehold.co/100x150',
-                    fit: BoxFit.cover,
-                  );
-                },
-              ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.book, size: 40),
+                );
+              },
             ),
-            const SizedBox(height: 5),
-            SizedBox(
-              width: 100,
-              child: Text(
-                  book['title'] ?? '제목 없음',
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis
-              ),
+          ),
+          const SizedBox(height: 5),
+          SizedBox(
+            width: 100,
+            child: Text(
+              book['title'] ?? '제목 없음',
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

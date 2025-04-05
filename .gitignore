@@ -12,6 +12,16 @@
 .swiftpm/
 migrate_working_dir/
 
+Ios/
+linux/
+macos/
+web/
+windows/
+.metadata
+README.md
+pubspec.lock
+analysis_options.yaml
+
 # IntelliJ related
 *.iml
 *.ipr
