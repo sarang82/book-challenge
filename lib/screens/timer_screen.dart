@@ -135,7 +135,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
           Navigator.pushReplacementNamed(context, '/library');
           break;
         case 4:
-        // 현재 프로필 화면이므로 아무 작업 안함
+          Navigator.pushReplacementNamed(context, '/profile');
           break;
       }
     }
