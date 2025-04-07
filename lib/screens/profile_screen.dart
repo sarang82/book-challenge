@@ -236,7 +236,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: 16,
-                  decoration: TextDecoration.underline,
                 ),
               ),
             ),

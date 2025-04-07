@@ -1,2 +1,0 @@
-C:/Users/kimon/AndroidStudioProjects/startUp/android/app/.cxx/Debug/i161xf72/x86/CMakeFiles/edit_cache.dir
-C:/Users/kimon/AndroidStudioProjects/startUp/android/app/.cxx/Debug/i161xf72/x86/CMakeFiles/rebuild_cache.dir

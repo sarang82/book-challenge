@@ -63,6 +63,7 @@ class MyApp extends StatelessWidget {
       ),
       home: const LoginPage(),
       routes: {
+        '/login': (context) => const LoginPage(), // 또는 LoginScreen() 사용 시 이름 확인
         '/home': (context) => const HomeScreen(),
         '/library': (context) => const BookTrackingScreen(),
         '/profile': (context) => const ProfileScreen(),
