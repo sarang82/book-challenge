@@ -64,8 +64,9 @@ class AladinService {
     }
 
     try {
+      // OptResult=packing 파라미터 추가
       final url = Uri.parse(
-          '$_baseUrl?ttbkey=$_apiKey&QueryType=$queryType&MaxResults=$maxResults&start=1&SearchTarget=Book&output=js&Version=20131101'
+          '$_baseUrl?ttbkey=$_apiKey&QueryType=$queryType&MaxResults=$maxResults&start=1&SearchTarget=Book&output=js&Version=20131101&OptResult=packing'
       );
 
       if (kDebugMode) {
@@ -102,6 +103,11 @@ class AladinService {
         final List<Map<String, dynamic>> items = List<Map<String, dynamic>>.from(data['item']);
         if (kDebugMode) {
           print('API 응답 성공: ${items.length}개 도서 데이터 수신');
+          // 응답 구조 확인을 위한 로깅 추가
+          if (items.isNotEmpty) {
+            print('첫 번째 도서 데이터 샘플:');
+            print(json.encode(items.first));
+          }
         }
 
         // 결과를 캐시에 저장
@@ -199,13 +205,13 @@ class AladinService {
 
   // 책 정보를 Firebase에 저장하기 좋은 형태로 변환
   Map<String, dynamic> transformBookData(Map<String, dynamic> bookData) {
-    // null 안전 접근
-    int? parsePrice(dynamic price) {
-      if (price == null) return 0;
-      if (price is int) return price;
-      if (price is String) {
+    // 페이지 수 파싱 함수
+    int parseItemPage(dynamic page) {
+      if (page == null) return 0;
+      if (page is int) return page;
+      if (page is String) {
         try {
-          return int.parse(price);
+          return int.parse(page);
         } catch (_) {
           return 0;
         }
@@ -213,6 +219,24 @@ class AladinService {
       return 0;
     }
 
+    // 페이지 수 추출 - API 문서에 따르면 subInfo.itemPage에 위치
+    int itemPage = 0;
+    if (bookData['subInfo'] != null && bookData['subInfo']['itemPage'] != null) {
+      itemPage = parseItemPage(bookData['subInfo']['itemPage']);
+      if (kDebugMode) {
+        print('subInfo에서 페이지 수 찾음: $itemPage');
+      }
+    } else {
+      // 디버깅용 로그
+      if (kDebugMode) {
+        print('subInfo 또는 itemPage가 없음: ${bookData.keys.join(', ')}');
+        if (bookData['subInfo'] != null) {
+          print('subInfo 키: ${bookData['subInfo'].keys.join(', ')}');
+        }
+      }
+    }
+
+    // 도서 데이터 변환 및 반환
     return {
       'isbn': bookData['isbn13'] ?? bookData['isbn'] ?? '0',
       'title': bookData['title'] ?? '',
@@ -221,17 +245,66 @@ class AladinService {
       'pubDate': bookData['pubDate'] ?? '',
       'coverUrl': bookData['cover'] ?? '',
       'description': bookData['description'] ?? '',
-      'priceStandard': parsePrice(bookData['priceStandard']),
-      'priceSales': parsePrice(bookData['priceSales']),
       'categoryName': bookData['categoryName'] ?? '',
       'link': bookData['link'] ?? '',
+      'itemPage': itemPage,
       'updatedAt': DateTime.now().toIso8601String(),
+      // 추가: 전자책 여부 확인
+      'isEbook': bookData['categoryName']?.toString().toLowerCase().contains('ebook') ?? false,
     };
   }
 
   // 캐시 비우기
   void clearCache() {
     _cache.clear();
+  }
+
+  // 도서 상세 정보 조회 (ISBN 검색)
+  Future<Map<String, dynamic>?> fetchBookDetail(String isbn) async {
+    if (isbn.isEmpty || isbn == '0') return null;
+
+    try {
+      final url = Uri.parse(
+          'https://www.aladin.co.kr/ttb/api/ItemLookUp.aspx?ttbkey=$_apiKey&itemIdType=ISBN&ItemId=$isbn&output=js&Version=20131101&OptResult=packing'
+      );
+
+      if (kDebugMode) {
+        print('도서 상세 정보 API 호출: $url');
+      }
+
+      final response = await http.get(url)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['item'] != null && data['item'].isNotEmpty) {
+          if (kDebugMode) {
+            print('도서 상세 정보 로드 성공: ${data['item'][0]['title']}');
+
+            // 디버깅을 위한 응답 구조 출력
+            print('도서 상세 응답 구조:');
+            print(json.encode(data['item'][0]));
+
+            // subInfo 구조 확인
+            if (data['item'][0]['subInfo'] != null) {
+              print('subInfo 구조:');
+              print(json.encode(data['item'][0]['subInfo']));
+            }
+          }
+          return transformBookData(data['item'][0]);
+        }
+      } else {
+        if (kDebugMode) {
+          print('도서 상세 정보 API 오류: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('도서 상세 정보 조회 실패: $e');
+      }
+    }
+
+    return null;
   }
 }
 

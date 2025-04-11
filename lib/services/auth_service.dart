@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -45,4 +45,20 @@ class AuthService {
 
   // 현재 유저
   User? get currentUser => _auth.currentUser;
+
+  //닉네임 띄우기
+  Future<String?> getNickname() async {
+    final user = _auth.currentUser;
+
+    //user 정보 없으면 널띄우기
+    if (user == null) return null;
+
+    final doc = await _firestore.collection('users').doc(user.uid).get();
+
+    if(doc.exists) {
+      return doc.data()?['nickname'];
+    } else{
+      return null;
+    }
+  }
 }

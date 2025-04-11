@@ -5,6 +5,8 @@ import '../services/book_data_service.dart';
 import '../services/firestore_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../main.dart'; // 글로벌 BookDataService 인스턴스 접근용
+import '../screens/category_detail_screen.dart';
+import '../screens/book_info_screen.dart'; // 추가된 import
 
 class BookTrackingScreen extends StatefulWidget {
   const BookTrackingScreen({super.key});
@@ -121,6 +123,14 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
     });
   }
 
+  // 카테고리명을 키로 변환하는 헬퍼 함수
+  String _getCategoryKey(String title) {
+    if (title == '베스트셀러') return 'bestsellers';
+    if (title == '신간 도서') return 'newReleases';
+    if (title == '추천 도서') return 'recommendedBooks';
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -168,7 +178,7 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
             children: [
               _buildBookSection('베스트셀러', _bookData['bestsellers'] ?? []),
               _buildBookSection('신간 도서', _bookData['newReleases'] ?? []),
-              _buildBookSection('추천 도서', _bookData['recommendedBooks'] ?? []),
+              _buildBookSection('AI 추천 도서', _bookData['recommendedBooks'] ?? []),
             ],
           ),
         ),
@@ -189,7 +199,27 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            // 더보기 버튼 추가
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CategoryDetailScreen(
+                      title: title,
+                      category: _getCategoryKey(title),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
         SizedBox(
           height: 200,
@@ -210,59 +240,70 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
 
   Widget _buildBookItem(Map<String, dynamic> book) {
     // 메모리 최적화: 이미지 캐싱 및 최적화
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        children: [
-          Container(
-            width: 100,
-            height: 150,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.network(
-              book['coverUrl'] ?? 'https://via.placeholder.com/100x150',
-              fit: BoxFit.cover,
-              // 메모리 캐싱 활성화
-              cacheWidth: 200, // 메모리 최적화를 위한 캐시 크기 제한
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
+    return InkWell(
+      onTap: () {
+        // 도서 정보 화면으로 이동
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BookInfoScreen(bookData: book),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Column(
+          children: [
+            Container(
+              width: 100,
+              height: 150,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: const Offset(0, 2),
                   ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.book, size: 40),
-                );
-              },
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Image.network(
+                book['coverUrl'] ?? 'https://via.placeholder.com/100x150',
+                fit: BoxFit.cover,
+                // 메모리 캐싱 활성화
+                cacheWidth: 200, // 메모리 최적화를 위한 캐시 크기 제한
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.book, size: 40),
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 5),
-          SizedBox(
-            width: 100,
-            child: Text(
-              book['title'] ?? '제목 없음',
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 5),
+            SizedBox(
+              width: 100,
+              child: Text(
+                book['title'] ?? '제목 없음',
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

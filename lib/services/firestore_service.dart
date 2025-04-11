@@ -227,4 +227,46 @@ class FirestoreService {
         .orderBy('timestamp', descending: true)
         .snapshots();
   }
+
+  // 도서 상세 정보 가져오기
+  Future<Map<String, dynamic>?> getBookDetail(String isbn) async {
+    try {
+      final docSnapshot = await _firestore.collection('bookDetails').doc(isbn).get();
+
+      if (docSnapshot.exists) {
+        if (kDebugMode) {
+          print('Firestore에서 도서 상세 정보 로드 성공: $isbn');
+        }
+        return docSnapshot.data() as Map<String, dynamic>;
+      }
+
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('도서 상세 정보 조회 실패: $e');
+      }
+      return null;
+    }
+  }
+
+  // 도서 상세 정보 저장 또는 업데이트
+  Future<bool> saveOrUpdateBookDetail(String isbn, Map<String, dynamic> detailData) async {
+    try {
+      await _firestore.collection('bookDetails').doc(isbn).set({
+        ...detailData,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (kDebugMode) {
+        print('도서 상세 정보 저장 성공: $isbn');
+      }
+
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('도서 상세 정보 저장 실패: $e');
+      }
+      return false;
+    }
+  }
 }

@@ -29,13 +29,13 @@ class _LoginPageState extends State<LoginPage> {
         const SnackBar(content: Text('로그인 성공!')),
       );
 
-    //홈 화면으로 이동
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+      //홈 화면으로 이동
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
 
     } on FirebaseAuthException catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('로그인 실패: ${e.message}')),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 실패: ${e.message}')),
+      );
     }
   }
 
@@ -43,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView( // 🟢 스크롤 가능하도록 수정
+        child: SingleChildScrollView( //스크롤 가능하도록 수정
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
