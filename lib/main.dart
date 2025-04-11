@@ -1,15 +1,19 @@
+import 'package:book_tracking_app/providers/timer_provider.dart';
+
+import 'screens/challenge_add_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/book_tracking_screen.dart';
-import 'screens/profile.dart';
+import 'screens/profile_screen.dart';
 import 'services/book_data_service.dart';
 import 'screens/timer_screen.dart';
 import 'screens/challenge_screen.dart';
 import 'services/book_search_service.dart';
-import 'package:book_tracking_app/screens/login_screen.dart';
+import 'screens/login_screen.dart';
+import 'package:provider/provider.dart';
 
 // 글로벌 인스턴스로 사용하여 중복 초기화 방지
 final BookDataService bookDataService = BookDataService();
@@ -28,7 +32,11 @@ void main() async {
     }
 
     // 앱 시작
-    runApp(const MyApp());
+    runApp(
+      ChangeNotifierProvider(create: (_) => TimerProvider(),
+        child : const MyApp(),
+      ),
+    );
 
     // 백그라운드에서 데이터 업데이트 시작
     // 앱 UI를 먼저 보여주고 데이터는 비동기적으로 로드
@@ -71,13 +79,15 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const LoginPage(),  // 바로 fhrmdls 화면으로 이동
+      home: const LoginPage(),  // 바로 로그인 화면으로 이동
       routes: {
+        '/login': (context) => const LoginPage(),
         '/home': (context) => const HomeScreen(),
         '/library': (context) => const BookTrackingScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/timer': (context) => const TimerScreen(), // 타이머 화면 추가
         '/challenge': (context) => const ChallengeScreen(), // 챌린지 화면 추가
+        '/newChallenge' : (context) => const ChallengeAddScreen(),
       },
     );
   }
