@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../providers/timer_provider.dart';
+import 'package:table_calendar/table_calendar.dart';
+
 
 class TimerScreen extends StatefulWidget {
-  final Function(int)? onTabChanged; // optional로 변경
-  final int currentIndex; // 기본값 제공
+  final Function(int)? onTabChanged;
+  final int currentIndex;
 
   const TimerScreen({
     super.key,
@@ -15,34 +18,29 @@ class TimerScreen extends StatefulWidget {
   });
 
   @override
-  _TimerScreenState createState() => _TimerScreenState();
+  State<TimerScreen> createState() => _TimerScreenState();
 }
 
 class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStateMixin {
-  int _seconds = 0;
-  bool _isRunning = false;
-  late DateTime _selectedDay;
-  Map<DateTime, int> _readingLog = {};
   late TabController _tabController;
-
+  Map<DateTime, int> _readingLog = {};
+  late DateTime _selectedDay;
   final user = FirebaseAuth.instance.currentUser;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-    _selectedDay = DateTime.now();
     _tabController = TabController(length: 2, vsync: this, initialIndex: widget.currentIndex);
+    _selectedDay = DateTime.now();
     _loadUserReadingLog();
   }
 
   Future<void> _loadUserReadingLog() async {
     if (user == null) return;
-    final uid = user!.uid;
-    final snapshot = await _firestore.collection('reading_logs').doc(uid).get();
+    final snapshot = await _firestore.collection('reading_logs').doc(user!.uid).get();
     if (snapshot.exists) {
-      final data = snapshot.data()!;
-      final Map<String, dynamic> logs = data['log'] ?? {};
+      final Map<String, dynamic> logs = snapshot.data()?['log'] ?? {};
       setState(() {
         _readingLog = logs.map((key, value) {
           final parts = key.split('-').map(int.parse).toList();
@@ -52,59 +50,30 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     }
   }
 
-  Future<void> _saveReadingLog() async {
+  Future<void> _saveReadingLog(int seconds) async {
     if (user == null) return;
-    final uid = user!.uid;
-    final Map<String, int> stringMap = {
-      for (var entry in _readingLog.entries)
-        '${entry.key.year}-${entry.key.month}-${entry.key.day}': entry.value
+    DateTime key = DateTime.now();
+    key = DateTime(key.year, key.month, key.day);
+    _readingLog[key] = (_readingLog[key] ?? 0) + seconds;
+
+    final log = {
+      for (var e in _readingLog.entries)
+        '${e.key.year}-${e.key.month}-${e.key.day}': e.value
     };
-    await _firestore.collection('reading_logs').doc(uid).set({'log': stringMap});
+
+    await _firestore.collection('reading_logs').doc(user!.uid).set({'log': log});
   }
 
-  void _startTimer() {
-    setState(() {
-      _isRunning = true;
-    });
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!_isRunning) return false;
-      setState(() {
-        _seconds++;
-      });
-      return true;
-    });
+  void _onItemTapped(int index) {
+    if (widget.onTabChanged != null) widget.onTabChanged!(index);
+    if (index != widget.currentIndex) {
+      final route = ['/timer', '/challenge', '/home', '/library', '/profile'][index];
+      Navigator.pushReplacementNamed(context, route);
+    }
   }
-
-  void _stopTimer() {
-    setState(() {
-      _isRunning = false;
-      DateTime key = DateTime.now();
-      key = DateTime(key.year, key.month, key.day);
-      _readingLog[key] = (_readingLog[key] ?? 0) + _seconds;
-      _seconds = 0;
-    });
-    _saveReadingLog();
-  }
-
-  int _getTodaySeconds() {
-    DateTime today = DateTime.now();
-    today = DateTime(today.year, today.month, today.day);
-    return _readingLog[today] ?? 0;
-  }
-
-  int _getMonthlyTotalSeconds() {
-    return _readingLog.entries
-        .where((entry) =>
-    entry.key.year == _selectedDay.year &&
-        entry.key.month == _selectedDay.month)
-        .fold(0, (prev, entry) => prev + entry.value);
-  }
-
-  int _getMonthlyTotalHours() => _getMonthlyTotalSeconds() ~/ 3600;
-  int _getMonthlyTotalMinutes() => (_getMonthlyTotalSeconds() % 3600) ~/ 60;
 
   Color _getColorBasedOnMinutes(int minutes) {
+    if (minutes == 0) return Colors.transparent;
     if (minutes >= 180) return Colors.blue[900]!;
     if (minutes >= 90) return Colors.blue[700]!;
     if (minutes >= 60) return Colors.blue[500]!;
@@ -112,158 +81,125 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     return Colors.blue[100]!;
   }
 
-  // 하단 네비게이션 탭 클릭 시 처리 함수
-  void _onItemTapped(int index) {
-    // widget.onTabChanged가 null이 아니면 호출
-    if (widget.onTabChanged != null) {
-      widget.onTabChanged!(index);
-    }
-
-    // 탭 변경에 따라 페이지 네비게이션
-    if (index != widget.currentIndex) {
-      switch (index) {
-        case 0:
-          Navigator.pushReplacementNamed(context, '/timer');
-          break;
-        case 1:
-          Navigator.pushReplacementNamed(context, '/challenge');
-          break;
-        case 2:
-          Navigator.pushReplacementNamed(context, '/home');
-          break;
-        case 3:
-          Navigator.pushReplacementNamed(context, '/library');
-          break;
-        case 4:
-          Navigator.pushReplacementNamed(context, '/profile');
-          break;
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final timerProvider = Provider.of<TimerProvider>(context);
+
+    int todaySeconds = _readingLog[DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)] ?? 0;
+    int displaySeconds = timerProvider.seconds;
+    int totalToday = todaySeconds + displaySeconds;
+
+    String formattedTime = "${(displaySeconds ~/ 3600).toString().padLeft(2, '0')}:"
+        "${((displaySeconds % 3600) ~/ 60).toString().padLeft(2, '0')}:"
+        "${(displaySeconds % 60).toString().padLeft(2, '0')}";
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('타이머 / 달력'),
+        backgroundColor: Colors.white,
+        title: const Text('타이머'),
+        centerTitle: true,
         bottom: TabBar(
+          labelColor: Colors.black,            // 선택된 탭 글씨 색
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.black,
           controller: _tabController,
-          tabs: const [
-            Tab(text: '타이머'),
-            Tab(text: '달력'),
-          ],
+          tabs: const [Tab(text: '타이머'), Tab(text: '달력')],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildTimerTab(),
-          _buildCalendarTab(),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(formattedTime, style: const TextStyle(fontSize: 48)),
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: timerProvider.isRunning
+                          ? () async {
+                        timerProvider.stop();
+                        await _saveReadingLog(timerProvider.seconds);
+                        timerProvider.reset();
+                        _loadUserReadingLog(); // UI 갱신
+                      }
+                          : null,
+                      child: const Text('중지'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFCDCACA),
+                        foregroundColor: Colors.black,
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(24),
+                      ),
+                    ),
+                    const SizedBox(width: 60),
+                    ElevatedButton(
+                      onPressed: timerProvider.isRunning ? null : timerProvider.start,
+                      child: const Text('시작'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFE232),
+                        foregroundColor: Colors.black,
+                        shape: const CircleBorder(),
+                        padding: const EdgeInsets.all(24),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                Text("오늘 나는\n${totalToday ~/ 3600}시간 ${(totalToday % 3600) ~/ 60}분\n독서했어요.",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                TableCalendar(
+                  firstDay: DateTime.utc(2020, 1, 1),
+                  lastDay: DateTime.utc(2030, 12, 31),
+                  focusedDay: _selectedDay,
+                  selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                    });
+                  },
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder: (context, date, _) {
+                      final key = DateTime(date.year, date.month, date.day);
+                      final minutes = (_readingLog[key] ?? 0) ~/ 60;
+                      return Container(
+                        margin: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _getColorBasedOnMinutes(minutes),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('${date.day}'),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "이번달 나는?\n총 ${_readingLog.entries.where((e) => e.key.month == _selectedDay.month).fold(0, (sum, e) => sum + e.value) ~/ 3600}시간 "
+                      "${_readingLog.entries.where((e) => e.key.month == _selectedDay.month).fold(0, (sum, e) => sum + e.value) % 3600 ~/ 60}분 독서했어요.",
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: widget.currentIndex,
-        onTap: _onItemTapped,  // 하단 탭 클릭 시 _onItemTapped 호출
-      ),
-    );
-  }
-
-  Widget _buildTimerTab() {
-    int todaySeconds = _getTodaySeconds();
-    int todayHours = todaySeconds ~/ 3600;
-    int todayMinutes = (todaySeconds % 3600) ~/ 60;
-
-    String formattedTime = "${(_seconds ~/ 3600).toString().padLeft(2, '0')}:"
-        "${((_seconds % 3600) ~/ 60).toString().padLeft(2, '0')}:"
-        "${(_seconds % 60).toString().padLeft(2, '0')}";
-
-    return Center(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 40),
-            Text(
-              formattedTime,
-              style: const TextStyle(fontSize: 48),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: _isRunning ? null : _startTimer,
-                  child: const Text('시작'),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _isRunning ? _stopTimer : null,
-                  child: const Text('중지'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-            Text(
-              "오늘 나는\n${todayHours}시간 ${todayMinutes}분\n독서했어요.",
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCalendarTab() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: _selectedDay,
-            calendarFormat: CalendarFormat.month,
-            selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-              });
-            },
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, date, _) {
-                DateTime key = DateTime(date.year, date.month, date.day);
-                int seconds = _readingLog[key] ?? 0;
-                int minutes = seconds ~/ 60;
-                return Container(
-                  margin: const EdgeInsets.all(4),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _getColorBasedOnMinutes(minutes),
-                  ),
-                  child: Text(
-                    '${date.day}',
-                    style: const TextStyle(color: Colors.black),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "이번달 나는?\n총 ${_getMonthlyTotalHours()}시간 ${_getMonthlyTotalMinutes()}분\n독서했어요.",
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-        ],
+        onTap: _onItemTapped,
       ),
     );
   }

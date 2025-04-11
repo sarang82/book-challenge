@@ -1,3 +1,5 @@
+import 'package:book_tracking_app/providers/timer_provider.dart';
+
 import 'screens/challenge_add_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -11,6 +13,7 @@ import 'screens/timer_screen.dart';
 import 'screens/challenge_screen.dart';
 import 'services/book_search_service.dart';
 import 'screens/login_screen.dart';
+import 'package:provider/provider.dart';
 
 // 글로벌 인스턴스로 사용하여 중복 초기화 방지
 final BookDataService bookDataService = BookDataService();
@@ -29,7 +32,11 @@ void main() async {
     }
 
     // 앱 시작
-    runApp(const MyApp());
+    runApp(
+      ChangeNotifierProvider(create: (_) => TimerProvider(),
+        child : const MyApp(),
+      ),
+    );
 
     // 백그라운드에서 데이터 업데이트 시작
     // 앱 UI를 먼저 보여주고 데이터는 비동기적으로 로드
