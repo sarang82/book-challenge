@@ -1,4 +1,3 @@
-import 'package:book_tracking_app/screens/book_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/auth_service.dart';
@@ -267,11 +266,8 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         _clearFocus();
 
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => BookInfoScreen(bookData: book),
-            ),
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${book['title']} 상세 화면은 개발 중입니다'))
         );
       },
       child: Container(
@@ -453,3 +449,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
