@@ -45,7 +45,9 @@ class _TimerScreenState extends State<TimerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('독서 타이머'),
+        title: const Text('독서 타이머',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
