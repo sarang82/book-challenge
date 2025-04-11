@@ -136,8 +136,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
+    enabledBorder: const OutlineInputBorder(
+    borderSide: BorderSide(color: Colors.black),
+    ),
+    focusedBorder: const OutlineInputBorder(
+    borderSide: BorderSide(color: Colors.black, width: 2),
         ),
       ),
+    ),
     );
   }
 
@@ -151,7 +157,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: const InputDecoration(
           labelText: '성별',
           border: OutlineInputBorder(),
+          filled: true,
+          fillColor: Colors.white,
         ),
+        dropdownColor: Colors.white,
         items: genders.map((g) {
           return DropdownMenuItem(value: g, child: Text(g));
         }).toList(),
@@ -163,7 +172,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('내 정보', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         leading: _isEditing

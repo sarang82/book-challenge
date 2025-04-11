@@ -21,10 +21,12 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
 
   void _showDatePicker(bool isStartDate){
     showModalBottomSheet(context: context,
+        backgroundColor: Colors.white,
         builder: (_) {
           return SizedBox(
             height: 300,
             child: CupertinoDatePicker(
+              backgroundColor: Colors.white,
               mode: CupertinoDatePickerMode.date,
               initialDateTime: isStartDate ? _startDate : _endDate,
               onDateTimeChanged: (DateTime newDate) {
