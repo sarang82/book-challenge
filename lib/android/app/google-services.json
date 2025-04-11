@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "57159075316",
+    "project_id": "talkdok-cf1b4",
+    "storage_bucket": "talkdok-cf1b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:57159075316:android:839745be9e8053ec02e5a1",
+        "android_client_info": {
+          "package_name": "com.example.book_tracking_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6oyXi05lQLM7xgRIXTm97xyt600h86uM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
