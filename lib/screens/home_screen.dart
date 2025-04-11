@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import '../services/auth_service.dart';
-import '../widgets/bottom_nav_bar.dart'; // bottom_nav_bar 임포트
+import '../widgets/bottom_nav_bar.dart';
 import '../services/book_search_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -11,29 +12,30 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 2; // 홈 화면은 인덱스 2
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  int _selectedIndex = 2;
 
-  // 검색 관련 상태 변수 추가
+  late AnimationController _waveController;
+
   final TextEditingController _searchController = TextEditingController();
   final BookSearchService _searchService = BookSearchService();
-  //홈에서 닉네임 불러오기
   String? _nickname;
 
   bool _isSearching = false;
   bool _isLoading = false;
   List<Map<String, dynamic>> _searchResults = [];
-
-  // 디바운싱을 위한 타이머
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    // 검색어 변경 리스너 등록
     _searchController.addListener(_onSearchChanged);
-    //닉네임 불러오기
     _loadNickname();
+
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
   }
 
   Future<void> _loadNickname() async {
@@ -45,14 +47,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    // 메모리 누수 방지를 위한 리소스 해제
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _debounce?.cancel();
+    _waveController.dispose();
     super.dispose();
   }
 
-  // 검색어 변경 시 호출되는 메서드 (디바운싱 적용)
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -67,7 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // 검색 실행
   Future<void> _performSearch(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -84,7 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final results = await _searchService.searchBooks(query);
-
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -95,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('검색 중 오류가 발생했습니다: $e'))
+        SnackBar(content: Text('검색 중 오류가 발생했습니다: $e')),
       );
     }
   }
@@ -108,34 +107,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
       switch (index) {
         case 0:
-        // 타이머 화면으로 이동
           Navigator.pushReplacementNamed(context, '/timer');
           break;
         case 1:
-        // 챌린지 화면으로 이동
           Navigator.pushReplacementNamed(context, '/challenge');
           break;
         case 2:
-        // 이미 홈 화면이므로 아무 작업 안함
           break;
         case 3:
-        // 서재 화면으로 이동
           Navigator.pushReplacementNamed(context, '/library');
           break;
         case 4:
-        // 프로필 화면으로 이동
           Navigator.pushReplacementNamed(context, '/profile');
           break;
       }
     }
   }
 
-  // 검색창 포커스 해제
   void _clearFocus() {
     FocusScope.of(context).unfocus();
   }
 
-  // 검색 모드 종료
   void _exitSearchMode() {
     _searchController.clear();
     setState(() {
@@ -148,15 +140,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    // 도서 항목 하나의 높이 (패딩 포함) 계산
-    final double bookItemHeight = 76.0; // 60px 높이 + 패딩 16px
-    // 4개 항목을 보여주는 높이 계산
+    final double bookItemHeight = 76.0;
     final double resultsHeight = bookItemHeight * 4;
 
-
     return GestureDetector(
-      onTap: _clearFocus, // 화면 터치시 키보드 닫기
+      onTap: _clearFocus,
       child: Scaffold(
+        backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
@@ -170,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: '제목 또는 저자를 입력하세요.',
-                hintStyle: const TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.normal),
+                hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
@@ -197,17 +187,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         body: Stack(
           children: [
-            // 기본 홈 화면 내용
             Column(
               children: [
                 const SizedBox(height: 20),
                 _buildMainCard(),
                 const SizedBox(height: 20),
-                Expanded(child: _buildImageSection(screenWidth)),
+                Expanded(child: _buildWaveBackground()),
               ],
             ),
-
-            // 검색 결과 오버레이
             if (_isSearching)
               Positioned(
                 top: 0,
@@ -215,9 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 right: 0,
                 child: Container(
                   color: Colors.white,
-                  height: _isLoading || _searchResults.isEmpty
-                      ? 80 // 로딩 중이거나 결과가 없을 때는 작은 높이
-                      : resultsHeight, // 결과가 있으면 4개 항목 높이
+                  height: _isLoading || _searchResults.isEmpty ? 80 : resultsHeight,
                   child: _isLoading
                       ? const Center(
                     child: Padding(
@@ -247,7 +232,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
-        // 기존 BottomNavigationBar 대신 새로운 BottomNavBar 위젯 사용
         bottomNavigationBar: BottomNavBar(
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
@@ -256,18 +240,66 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 간소화된 도서 아이템 위젯 (표지, 제목, 저자만 표시)
+  Widget _buildWaveBackground() {
+    return AnimatedBuilder(
+      animation: _waveController,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            _buildWaveLayer(
+              amplitude: 20,
+              wavelength: 200,
+              verticalOffset: 60,
+              color: Colors.blue.withOpacity(0.4),
+            ),
+            _buildWaveLayer(
+              amplitude: 25,
+              wavelength: 180,
+              verticalOffset: 90,
+              color: Colors.blue.withOpacity(0.3),
+            ),
+            _buildWaveLayer(
+              amplitude: 30,
+              wavelength: 160,
+              verticalOffset: 120,
+              color: Colors.blue.withOpacity(0.2),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  Widget _buildWaveLayer({
+    required double amplitude,
+    required double wavelength,
+    required double verticalOffset,
+    required Color color,
+  }) {
+    return Positioned.fill(
+      child: CustomPaint(
+        painter: _WavePainter(
+          amplitude: amplitude,
+          wavelength: wavelength,
+          phase: _waveController.value * 2 * math.pi,
+          verticalOffset: verticalOffset,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+
   Widget _buildSimpleBookItem(Map<String, dynamic> book) {
     return InkWell(
       onTap: () {
-        // 도서 상세 페이지로 이동하는 기능 (추후 구현)
         setState(() {
           _isSearching = false;
         });
         _clearFocus();
-
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${book['title']} 상세 화면은 개발 중입니다'))
+          SnackBar(content: Text('${book['title']} 상세 화면은 개발 중입니다')),
         );
       },
       child: Container(
@@ -278,9 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // 도서 표지
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: Image.network(
@@ -288,42 +318,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 40,
                 height: 60,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 40,
-                    height: 60,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.book, size: 24),
-                  );
-                },
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 40,
+                  height: 60,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.book, size: 24),
+                ),
               ),
             ),
             const SizedBox(width: 12),
-            // 도서 정보 (제목과 저자만)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    book['title'] ?? '제목 없음',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(book['title'] ?? '제목 없음',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text(
-                    book['author'] ?? '저자 미상',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(book['author'] ?? '저자 미상',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -332,6 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
   Widget _buildMainCard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -341,51 +358,37 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 4),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(
                   width: 50,
                   height: 50,
-                  child: Image.asset(
-                    'assets/images/Sea_otter.png',
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.asset('assets/images/Sea_otter.png'),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '오늘의 독서 날씨: 맑음! ☀️',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black),
-                      ),
-                      SizedBox(height: 5),
-                      Text(
-                        '$_nickname님,\n같이 책을 읽어볼까요?',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black),
-                      ),
+                      Text('오늘의 독서 날씨: 맑음! ☀️',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 5),
+                      Text('$_nickname님,\n같이 책을 읽어볼까요?',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 25),
-            const Text(
-              '[아몬드 3일만에 읽기] 챌린지 현황',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black),
-            ),
+            const Text('[아몬드 3일만에 읽기] 챌린지 현황',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 10),
             Stack(
               children: [
@@ -413,21 +416,19 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text('78%', style: TextStyle(color: Colors.black)),
             ),
             const SizedBox(height: 15),
-            Container(
-              width: double.infinity,
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEE798),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: const Center(
-                child: Text(
-                  '새 챌린지 시작하기',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/newChallenge');
+              },
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE798),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: const Center(
+                  child: Text('새 챌린지 시작하기',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
               ),
             ),
@@ -436,17 +437,45 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  Widget _buildImageSection(double width) {
-    return Container(
-      width: width,
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/wave.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-    );
-  }
 }
+
+class _WavePainter extends CustomPainter {
+  final double amplitude;
+  final double wavelength;
+  final double phase;
+  final double verticalOffset;
+  final Color color;
+
+  _WavePainter({
+    required this.amplitude,
+    required this.wavelength,
+    required this.phase,
+    required this.verticalOffset,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path();
+    path.moveTo(0, size.height);
+
+    for (double x = 0; x <= size.width; x++) {
+      final dx = x;
+      final dy = size.height / 2 +
+          amplitude * math.sin(2 * math.pi * x / wavelength + phase) +
+          verticalOffset;
+      path.lineTo(dx, dy);
+    }
+
+    path.lineTo(size.width, size.height);
+    path.close();
+
+    final paint = Paint()..color = color;
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _WavePainter oldDelegate) => true;
+}
+
 
