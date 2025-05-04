@@ -12,7 +12,28 @@
           "package_name": "com.example.book_tracking_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "57159075316-d2pmgsjims6uccrrbkirtdjmdhfi64ct.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.book_tracking_app",
+            "certificate_hash": "4a43a094852dfb5fed696a302401bcac8f9751ea"
+          }
+        },
+        {
+          "client_id": "57159075316-ocr1vef0qqsavv2cvf6ecnnl1ej658tt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.book_tracking_app",
+            "certificate_hash": "d5faf1d6414924dc7d813f2f5a70a7c1ac77a3c5"
+          }
+        },
+        {
+          "client_id": "57159075316-gara33ouocl1s2kmv1htmf13ecgs4fso.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB6oyXi05lQLM7xgRIXTm97xyt600h86uM"
@@ -20,7 +41,63 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "57159075316-gara33ouocl1s2kmv1htmf13ecgs4fso.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "57159075316-0t0ub95p6gqnp4dd4cnf62f580dqck9q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bookTrackingApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:57159075316:android:c61d3944ade8394202e5a1",
+        "android_client_info": {
+          "package_name": "com.example.startup"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "57159075316-dubeofgf4nf6rbe81ifb2ov7jtu8tkbv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.startup",
+            "certificate_hash": "4a43a094852dfb5fed696a302401bcac8f9751ea"
+          }
+        },
+        {
+          "client_id": "57159075316-gara33ouocl1s2kmv1htmf13ecgs4fso.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6oyXi05lQLM7xgRIXTm97xyt600h86uM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "57159075316-gara33ouocl1s2kmv1htmf13ecgs4fso.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "57159075316-0t0ub95p6gqnp4dd4cnf62f580dqck9q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bookTrackingApp"
+              }
+            }
+          ]
         }
       }
     }
