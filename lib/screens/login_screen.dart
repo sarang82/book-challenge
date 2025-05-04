@@ -2,6 +2,7 @@ import 'sign_up_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:book_tracking_app/services/auth_service.dart';
 
 import 'home_screen.dart';
 
@@ -23,7 +24,19 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      // Firebase 로그인 시도 (UserCredential을 반환)
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 이메일 인증 여부 확인
+      if (userCredential.user != null && !userCredential.user!.emailVerified) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이메일 인증이 완료되지 않았습니다.')),
+        );
+        return;  // 이메일 인증되지 않으면 로그인 실패
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('로그인 성공!')),
@@ -31,6 +44,8 @@ class _LoginPageState extends State<LoginPage> {
 
       //홈 화면으로 이동
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+      print("User UID: ${userCredential.user!.uid}");
+
 
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
