@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../services/challenge_service.dart';
 
 class ChallengeScreen extends StatefulWidget {
   const ChallengeScreen({super.key});
@@ -13,6 +14,10 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
   bool _isLoading = true;
   bool _isRefreshing = false;
   late TabController _tabController;
+
+  //챌린지 띄우기
+  final ChallengeService _challengeService = ChallengeService();
+  List<Challenge> _challenges = [];
 
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
@@ -62,9 +67,10 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
   // 초기 데이터 로드 (최적화된 방식)
   Future<void> _loadInitialData() async {
     if (_isRefreshing) return; // 이미 새로고침 중이면 중복 호출 방지
+    final challenges = await _challengeService.getChallenges();
 
     setState(() {
-      //나중에 수정ㄱㄱ
+      _challenges = challenges;
       _isLoading = false;
       _isRefreshing = false;
     });
@@ -72,6 +78,12 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    //진행중/완료 나누기
+    final ongoing = _challenges
+        .where((c) => c.endDate.isAfter(DateTime.now())).toList();
+    final completed = _challenges
+        .where((c) => c.endDate.isBefore(DateTime.now())).toList();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -94,10 +106,47 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
         controller: _tabController,
-        children: const [
-          //나중에 조건문으로 추가ㄱㄱ
-          Center(child: Text('진행 중인 챌린지가 없습니다.')),
-          Center(child: Text('완료한 챌린지가 없습니다.')),
+        children: [
+          //진행 중 탭
+          ongoing.isEmpty
+          ? const Center(child: Text('진행 중인 챌린지가 없습니다.'))
+          : ListView.builder(
+            itemCount: ongoing.length,
+            itemBuilder: (context, index) {
+              final challenge = ongoing[index];
+              return Column(
+                children: [
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: AssetImage('assets/images/Sea_otter.png'),
+                      backgroundColor: Colors.white,
+                    ),
+                    title: Text(challenge.title),
+                    subtitle: Text(challenge.description),
+                  ),
+                  Divider(), // ListTile 뒤에 구분선 추가
+                ],
+              );
+            },
+          ),
+          // 완료 탭
+          completed.isEmpty
+              ? const Center(child: Text('완료한 챌린지가 없습니다.'))
+              : ListView.builder(
+            itemCount: completed.length,
+            itemBuilder: (context, index) {
+              final challenge = completed[index];
+              return Column(
+                children: [
+                  ListTile(
+                    title: Text(challenge.title),
+                    subtitle: Text(challenge.description),
+                  ),
+                  Divider(), // ListTile 뒤에 구분선 추가
+                ],
+              );
+            },
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavBar(

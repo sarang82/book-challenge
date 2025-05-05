@@ -80,7 +80,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                   TextField(
                     controller: _titleController,
                     decoration: InputDecoration(
-                      hintText: 'ex) 데미안 1주 안에 읽기',
+                      hintText: 'ex) 2주 안에 데미안 완독!',
                       hintStyle: const TextStyle(
                         fontSize:14,
                       ),
@@ -102,24 +102,50 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                       fontSize: 16,),
                   ),
                   const SizedBox(height: 8),
-                  TextField(
-                    controller: _descriptionController,
-                    maxLines: 5,
-                    maxLength: 500,
-                    decoration: InputDecoration(
-                      hintText: 'ex) 학교 과제를 위한 챌린지..',
-                      hintStyle: const TextStyle(
-                        fontSize:14,
+                  Stack(
+                    children: [
+                      TextField(
+                        controller: _descriptionController,
+                        maxLines: 5,
+                        maxLength: 200, // 텍스트 길이 제한은 유지
+                        buildCounter: (
+                            BuildContext context, {
+                              required int currentLength,
+                              required bool isFocused,
+                              required int? maxLength,
+                            }) => null, // 기본 카운터 제거
+                        decoration: InputDecoration(
+                          hintText: 'ex) 독후감 대회를 위해 빠르게 완독하기 위한 목적!',
+                          hintStyle: const TextStyle(fontSize: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF7F7F7),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        ),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
+                      Positioned(
+                        right: 16,
+                        bottom: 8,
+                        child: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _descriptionController,
+                          builder: (context, value, child) {
+                            final currentLength = value.text.length;
+                            return Text(
+                              '$currentLength/200',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                      filled: true,
-                      fillColor: const Color(0xFFF7F7F7),
-                      contentPadding: const EdgeInsets.symmetric(horizontal:12, vertical: 14),
-                    ),
+                    ],
                   ),
+
                   SizedBox(height:30),
 
                   //챌린지 목표 달성 방법
