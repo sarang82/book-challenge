@@ -196,9 +196,7 @@ class AladinService {
     return _fetchBooks(queryType: 'ItemNewAll', maxResults: maxResults);
   }
 
-  // 추천 도서 가져오기 (수정된 부분: Recommend -> ItemNewSpecial)
   Future<List<Map<String, dynamic>>> fetchRecommendedBooks({int maxResults = 20}) async {
-    // Recommend는 지원되지 않는 것으로 확인되어 ItemNewSpecial로 변경
     // ItemNewSpecial: 주목할 만한 신간 도서 (알라딘 API에서 지원하는 쿼리타입)
     return _fetchBooks(queryType: 'ItemNewSpecial', maxResults: maxResults);
   }
@@ -249,8 +247,6 @@ class AladinService {
       'link': bookData['link'] ?? '',
       'itemPage': itemPage,
       'updatedAt': DateTime.now().toIso8601String(),
-      // 추가: 전자책 여부 확인
-      'isEbook': bookData['categoryName']?.toString().toLowerCase().contains('ebook') ?? false,
     };
   }
 
