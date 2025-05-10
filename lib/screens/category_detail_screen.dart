@@ -131,6 +131,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
     final maxPage = (_books.length / 10).ceil();
 
     return Scaffold(
+      backgroundColor: Colors.white, // 배경색을 흰색으로 설정
       appBar: AppBar(
         title: Text(widget.title),
         backgroundColor: Colors.white,
@@ -141,11 +142,17 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
           ? _buildErrorView()
           : Column(
         children: [
-          if (kDebugMode)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text('총 ${_books.length}권, 현재 페이지: $_currentPage / $maxPage'),
+          // 페이지 정보
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              '총 ${_books.length}권, 현재 페이지: $_currentPage / $maxPage',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
             ),
+          ),
 
           // 도서 목록
           Expanded(
@@ -277,6 +284,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
+          color: Colors.white, // 각 아이템 배경색도 흰색으로 변경
           border: Border(
             bottom: BorderSide(color: Colors.grey.withOpacity(0.3)),
           ),
@@ -306,7 +314,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
               ),
             ),
             const SizedBox(width: 16),
-            // 도서 정보 (제목과 저자)
+            // 도서 정보 (제목과 저자만 표시)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +330,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    book['author'] ?? '저자 미상',
+                    '${book['author'] ?? '저자 미상'}',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
@@ -330,11 +338,6 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (kDebugMode)
-                    Text(
-                      '키: ${book.keys.join(", ")}',
-                      style: const TextStyle(fontSize: 10),
-                    ),
                 ],
               ),
             ),

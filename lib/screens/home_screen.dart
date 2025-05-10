@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import '../services/auth_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../services/book_search_service.dart';
+import '../screens/book_info_screen.dart'; // BookInfoScreen 임포트 추가
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -135,6 +136,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _searchResults = [];
     });
     _clearFocus();
+  }
+
+  // 도서 아이템 클릭 시 도서 정보 화면으로 이동하는 메서드
+  void _navigateToBookInfo(Map<String, dynamic> book) {
+    setState(() {
+      _isSearching = false;
+    });
+    _clearFocus();
+
+    // BookInfoScreen으로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookInfoScreen(bookData: book),
+      ),
+    );
   }
 
   @override
@@ -293,15 +310,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildSimpleBookItem(Map<String, dynamic> book) {
     return InkWell(
-      onTap: () {
-        setState(() {
-          _isSearching = false;
-        });
-        _clearFocus();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${book['title']} 상세 화면은 개발 중입니다')),
-        );
-      },
+      onTap: () => _navigateToBookInfo(book), // 수정된 부분: 클릭 시 도서 정보 화면으로 이동
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -477,5 +486,3 @@ class _WavePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _WavePainter oldDelegate) => true;
 }
-
-
