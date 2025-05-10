@@ -2,9 +2,27 @@ import 'sign_up_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:book_tracking_app/services/auth_service.dart';
-
+import 'package:google_sign_in/google_sign_in.dart';
+import '/services/auth_service.dart';
+import '/services/kakao_login_service.dart';
 import 'home_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const LoginPage(),
+    );
+  }
+}
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,32 +42,52 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
-      // Firebase 로그인 시도 (UserCredential을 반환)
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // 이메일 인증 여부 확인
-      if (userCredential.user != null && !userCredential.user!.emailVerified) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이메일 인증이 완료되지 않았습니다.')),
-        );
-        return;  // 이메일 인증되지 않으면 로그인 실패
-      }
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('로그인 성공!')),
       );
 
-      //홈 화면으로 이동
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
-      print("User UID: ${userCredential.user!.uid}");
-
+    //홈 화면으로 이동
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
 
     } on FirebaseAuthException catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('로그인 실패: ${e.message}')),
+    );
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      await GoogleSignIn().signOut(); // 계정 선택창 항상 보이게
+      final userCredential = await AuthService().signInWithGoogle();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로그인 실패: ${e.message}')),
+        const SnackBar(content: Text('Google 로그인 성공!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomeScreen()),
+      );
+    } catch (e) {
+      print('Google 로그인 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google 로그인 실패: $e')),
+      );
+    }
+  }
+
+  Future<void> _signInWithKakao() async {
+    try {
+      await KakaoLoginService().signInWithKakao(); // ✅ 안전한 Kakao 로그인 사용
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kakao 로그인 성공!')),
+      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+    } catch (e) {
+      print('Kakao 로그인 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kakao 로그인 실패: $e')),
       );
     }
   }
@@ -174,20 +212,26 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFFFFE812),
-                      radius: 25,
-                      child: Image.asset('assets/images/kakaoicon.png', width: 30, height: 30),
+                    GestureDetector(
+                      onTap: _signInWithKakao,
+                      child: CircleAvatar(
+                        backgroundColor: const Color(0xFFFFE812),
+                        radius: 25,
+                        child: Image.asset('assets/images/kakaoicon.png', width: 30, height: 30),
+                      ),
                     ),
                     CircleAvatar(
                       backgroundColor: const Color(0xFF03C75A),
                       radius: 25,
                       child: Image.asset('assets/images/navericon.png', width: 30, height: 30),
                     ),
-                    CircleAvatar(
-                      backgroundColor: Colors.white,
-                      radius: 25,
-                      child: Image.asset('assets/images/googleicon.png', width: 30, height: 30),
+                    GestureDetector(
+                      onTap: _signInWithGoogle,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        radius: 25,
+                        child: Image.asset('assets/images/googleicon.png', width: 90, height: 90),
+                      ),
                     ),
                   ],
                 ),

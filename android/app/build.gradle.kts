@@ -47,6 +47,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.1"))
     implementation("com.google.firebase:firebase-analytics")
 
+    implementation("com.kakao.sdk:v2-user:2.19.0")
     // 추가: 최신 AndroidX Core 라이브러리 및 OpenGL 지원 라이브러리
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.core:core-ktx:1.12.0")

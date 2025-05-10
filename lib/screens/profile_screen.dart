@@ -1,10 +1,11 @@
+// 생략된 import 생략 없이 포함
 import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,7 +16,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final int _selectedIndex = 4;
-
   final _nicknameController = TextEditingController();
   final _userIdController = TextEditingController();
   final _emailController = TextEditingController();
@@ -23,7 +23,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _gender = '선택하지 않음';
   bool _isEditing = false;
   String? _photoUrl;
-
   File? _selectedImage;
 
   @override
@@ -33,20 +32,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-    final data = doc.data();
-
-    if (data != null) {
+    final userInfo = await AuthService().getUserInfo();
+    if (userInfo != null) {
       setState(() {
-        _nicknameController.text = data['nickname'] ?? '';
-        _userIdController.text = data['userId'] ?? '';
-        _emailController.text = data['email'] ?? '';
-        _birthdateController.text = data['birthday'] ?? '';
-        _gender = data['gender'] ?? '선택하지 않음';
-        _photoUrl = data['photoUrl'];
+        _nicknameController.text = userInfo['nickname'] ?? '';
+        _userIdController.text = userInfo['userId'] ?? user.uid;
+        _emailController.text = userInfo['email'] ?? '';
+        _birthdateController.text = userInfo['birthday'] ?? '';
+        _gender = userInfo['gender'] ?? '선택하지 않음';
+        _photoUrl = userInfo['photoUrl'];
       });
     }
   }
@@ -55,64 +52,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    // 필수 항목 체크 (성별은 제외)
-    if (_nicknameController.text.isEmpty ||
-        _userIdController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _birthdateController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('모든 항목을 입력해주세요.')),
-      );
-      return;
-    }
-
     final dataToUpdate = {
       'nickname': _nicknameController.text,
       'userId': _userIdController.text,
       'email': _emailController.text,
       'birthday': _birthdateController.text,
+      'gender': _gender,
     };
 
-    // 성별 저장 (단, "선택하지 않음"은 저장 안함)
-    if (_gender != '선택하지 않음') {
-      dataToUpdate['gender'] = _gender;
-    }
-
-    // 사진 저장
-    if (_photoUrl != null && _photoUrl!.isNotEmpty) {
+    if (_photoUrl != null) {
       dataToUpdate['photoUrl'] = _photoUrl!;
     }
 
-    await FirebaseFirestore.instance.collection('users').doc(uid).update(dataToUpdate);
+    await FirebaseFirestore.instance.collection('users').doc(uid).set(
+      dataToUpdate,
+      SetOptions(merge: true),
+    );
 
-    setState(() {
-      _isEditing = false;
-    });
+    setState(() => _isEditing = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('정보가 저장되었습니다.')),
     );
-  }
-
-  void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      switch (index) {
-        case 0:
-          Navigator.pushReplacementNamed(context, '/timer');
-          break;
-        case 1:
-          Navigator.pushReplacementNamed(context, '/challenge');
-          break;
-        case 2:
-          Navigator.pushReplacementNamed(context, '/home');
-          break;
-        case 3:
-          Navigator.pushReplacementNamed(context, '/library');
-          break;
-        case 4:
-          break;
-      }
-    }
   }
 
   Future<void> _pickImage() async {
@@ -121,49 +82,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (picked != null) {
       setState(() {
         _selectedImage = File(picked.path);
-        _photoUrl = picked.path; // Firebase Storage 연동 시 수정 필요
+        _photoUrl = picked.path; // Firebase Storage 연동 전 임시 저장
       });
     }
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool enabled = false}) {
+  void _onItemTapped(int index) {
+    if (_selectedIndex != index) {
+      Navigator.pushReplacementNamed(context, [
+        '/timer',
+        '/challenge',
+        '/home',
+        '/library',
+        '/profile',
+      ][index]);
+    }
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {bool enabled = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
         controller: controller,
         enabled: enabled,
-        keyboardType: TextInputType.text,
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),
-    enabledBorder: const OutlineInputBorder(
-    borderSide: BorderSide(color: Colors.black),
-    ),
-    focusedBorder: const OutlineInputBorder(
-    borderSide: BorderSide(color: Colors.black, width: 2),
         ),
       ),
-    ),
     );
   }
 
   Widget _buildGenderSelector() {
     final genders = ['선택하지 않음', '남성', '여성'];
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: DropdownButtonFormField<String>(
         value: _gender,
         decoration: const InputDecoration(
           labelText: '성별',
           border: OutlineInputBorder(),
-          filled: true,
-          fillColor: Colors.white,
         ),
-        dropdownColor: Colors.white,
-        items: genders.map((g) {
-          return DropdownMenuItem(value: g, child: Text(g));
-        }).toList(),
+        items: genders
+            .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+            .toList(),
         onChanged: _isEditing ? (val) => setState(() => _gender = val!) : null,
       ),
     );
@@ -175,27 +138,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('내 정보', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('내 정보'),
         centerTitle: true,
-        leading: _isEditing
-            ? IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => setState(() {
-            _isEditing = false;
-            _loadUserData();
-          }),
-        )
-            : null,
         actions: [
           IconButton(
             icon: Icon(_isEditing ? Icons.check : Icons.edit),
-            onPressed: () {
-              if (_isEditing) {
-                _saveUserData();
-              } else {
-                setState(() => _isEditing = true);
-              }
-            },
+            onPressed: () => _isEditing ? _saveUserData() : setState(() => _isEditing = true),
           )
         ],
       ),
@@ -208,11 +156,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundColor: Colors.blue[100],
-                  backgroundImage:
-                  _selectedImage != null ? FileImage(_selectedImage!) : null,
-                  child: _selectedImage == null
-                      ? const Icon(Icons.person, size: 50, color: Colors.black54)
+                  backgroundImage: _selectedImage != null
+                      ? FileImage(_selectedImage!)
+                      : (_photoUrl?.startsWith('http') == true
+                      ? NetworkImage(_photoUrl!)
+                      : null) as ImageProvider?,
+                  child: (_photoUrl == null || _photoUrl == '')
+                      ? const Icon(Icons.person, size: 50)
                       : null,
                 ),
                 Positioned(
@@ -229,27 +179,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 )
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             _buildTextField('닉네임', _nicknameController, enabled: _isEditing),
             _buildTextField('아이디', _userIdController, enabled: _isEditing),
             _buildTextField('이메일', _emailController, enabled: _isEditing),
             _buildTextField('생년월일', _birthdateController, enabled: _isEditing),
             _buildGenderSelector(),
             const SizedBox(height: 24),
-            GestureDetector(
-              onTap: () async {
+            TextButton(
+              onPressed: () async {
                 await FirebaseAuth.instance.signOut();
                 if (!mounted) return;
                 Navigator.pushReplacementNamed(context, '/login');
               },
-              child: const Text(
-                '로그아웃',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 16,
-                ),
-              ),
-            ),
+              child: const Text('로그아웃', style: TextStyle(color: Colors.red)),
+            )
           ],
         ),
       ),

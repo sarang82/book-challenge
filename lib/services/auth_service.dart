@@ -1,11 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
-import '/utils/validators.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao_user;
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
 
   Future<void> sendVerificationEmailAndSaveTempUsers({
     required String email,
@@ -81,59 +82,87 @@ class AuthService {
     }
   }
 
-//    //1. 이메일 형식
-//    if (!isValidEmail(email)) {
-//      throw Exception('이메일 형식이 올바르지 않습니다.');
-//    }
-//
-//// 비밀번호 확인
-//    if (!isValidPassword(pwd)) {
-//      throw Exception('비밀번호는 8~16자, 특수문자 1개 이상 포함해야 합니다.');
-//    }
-//
-//    //계정 생성
-//    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-//      email: email, password: pwd,);
-//
-//    // Firestore에 사용자 정보 저장 + 이메일 인증 상태 저장
-//    try {
-//      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-//        'userId': userId,
-//        'nickname': nickname,
-//        'email': email,
-//        'birthday': birthday,
-//        'gender': gender,
-//        'status': 'pending', // 이메일 인증 대기 상태
-//        'createdAt': FieldValue.serverTimestamp(),
-//        'verificationDeadline': FieldValue.serverTimestamp(),  // 인증 기한
-//      });
-//    } catch (e) {
-//      print("Firestore save failed: $e");
-//      throw Exception("Firestore save failed: $e");
-//    }
-//
-//    return userCredential;
-//  }
-
   // 로그인
   Future<UserCredential> login(String email, String password) async {
-    UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+    return await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
-
-    // 이메일 인증 확인
-    if (userCredential.user != null && !userCredential.user!.emailVerified) {
-      // 인증되지 않은 이메일로 로그인 시 이메일 인증이 필요하다는 메시지 처리
-      throw Exception('이메일 인증을 완료해주세요.');
-    }
-
-    return userCredential;
   }
 
   // 로그아웃
   Future<void> logout() async {
     await _auth.signOut();
+  }
+
+  // 구글 로그인
+  Future<UserCredential> signInWithGoogle() async {
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+    if (googleUser == null) {
+      throw FirebaseAuthException(
+        code: 'ERROR_ABORTED_BY_USER',
+        message: '로그인이 취소되었습니다.',
+      );
+    }
+
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential = await _auth.signInWithCredential(credential);
+    final user = userCredential.user;
+
+    if (user != null) {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'userId': user.uid,
+          'nickname': user.displayName ?? '사용자',
+          'email': user.email ?? '',
+          'birthday': '',
+          'gender': '선택하지 않음',
+          'photoUrl': user.photoURL ?? '',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    return userCredential;
+  }
+
+  // 카카오 로그인
+  Future<UserCredential> signInWithKakao() async {
+    try {
+      // 카카오 로그인
+      final kakaoToken = await kakao_user.UserApi.instance.loginWithKakaoAccount();
+      final kakaoUser = await kakao_user.UserApi.instance.me();
+
+      // Firebase에서 사용자 인증
+      final OAuthCredential credential = OAuthProvider('kakao.com').credential(
+        accessToken: kakaoToken.accessToken,
+        idToken: kakaoToken.idToken,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+
+      // Firestore에 카카오 사용자 정보 저장
+      final uid = userCredential.user!.uid;
+      await _firestore.collection('users').doc(uid).set({
+        'nickname': kakaoUser.kakaoAccount?.profile?.nickname ?? '카카오 사용자',
+        'email': kakaoUser.kakaoAccount?.email ?? '${kakaoUser.id}@kakao.com',
+        'kakao_uid': kakaoUser.id.toString(),
+        'photoUrl': kakaoUser.kakaoAccount?.profile?.profileImageUrl ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      return userCredential;
+    } catch (e) {
+      throw Exception('Kakao 로그인 실패: $e');
+    }
   }
 
   // 현재 유저
@@ -142,7 +171,6 @@ class AuthService {
   //닉네임 띄우기
   Future<String?> getNickname() async {
     final user = _auth.currentUser;
-
     //user 정보 없으면 널띄우기
     if (user == null) return null;
 
@@ -155,4 +183,71 @@ class AuthService {
     }
   }
 
+  // 프로필 사진 URL 가져오기
+  Future<String?> getPhotoUrl() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final doc = await _firestore.collection('users').doc(user.uid).get();
+    if (doc.exists) {
+      final data = doc.data();
+      return data != null ? data['photoUrl'] : null;
+    } else {
+      return null;
+    }
+  }
+
+  // 이메일 업데이트
+  Future<void> updateEmail(String newEmail) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.updateEmail(newEmail);
+      await _firestore.collection('users').doc(user.uid).update({
+        'email': newEmail,
+      });
+    }
+  }
+
+  // 닉네임 업데이트
+  Future<void> updateNickname(String newNickname) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'nickname': newNickname,
+      });
+    }
+  }
+
+  // 프로필 사진 URL 업데이트
+  Future<void> updateProfilePhoto(String newPhotoUrl) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'photoUrl': newPhotoUrl,
+      });
+    }
+  }
+
+  // 성별 업데이트
+  Future<void> updateGender(String newGender) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'gender': newGender,
+      });
+    }
+  }
+
+  // 사용자 정보 가져오기
+  Future<Map<String, dynamic>?> getUserInfo() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final doc = await _firestore.collection('users').doc(user.uid).get();
+    if (doc.exists) {
+      return doc.data();
+    } else {
+      return null;
+    }
+  }
 }
