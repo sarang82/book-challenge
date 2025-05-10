@@ -921,7 +921,7 @@ class BookInfoContent extends StatelessWidget {
 
               // 리뷰 탭 (미구현)
               const Center(
-                child: Text('리뷰 기능은 준비 중입니다.'),
+                child: Text('리뷰 기능은 준비 중입니다!'),
               ),
             ],
           ),
