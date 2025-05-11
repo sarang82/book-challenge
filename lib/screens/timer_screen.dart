@@ -6,7 +6,6 @@ import '../widgets/bottom_nav_bar.dart';
 import '../providers/timer_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-
 class TimerScreen extends StatefulWidget {
   final Function(int)? onTabChanged;
   final int currentIndex;
@@ -36,6 +35,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     _loadUserReadingLog();
   }
 
+  // Firebase에서 독서 기록을 가져오는 메서드
   Future<void> _loadUserReadingLog() async {
     if (user == null) return;
     final snapshot = await _firestore.collection('reading_logs').doc(user!.uid).get();
@@ -43,13 +43,20 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
       final Map<String, dynamic> logs = snapshot.data()?['log'] ?? {};
       setState(() {
         _readingLog = logs.map((key, value) {
-          final parts = key.split('-').map(int.parse).toList();
-          return MapEntry(DateTime(parts[0], parts[1], parts[2]), value as int);
+          final parts = key.split('-');
+          // 월과 일이 1자리일 때 2자리로 맞춰주기 위해 padLeft 사용
+          final year = int.parse(parts[0]);
+          final month = int.parse(parts[1].padLeft(2, '0'));
+          final day = int.parse(parts[2].padLeft(2, '0'));
+
+          return MapEntry(DateTime(year, month, day), value as int);
         });
       });
     }
   }
 
+
+  // 독서 기록을 Firebase에 저장하는 메서드
   Future<void> _saveReadingLog(int seconds) async {
     if (user == null) return;
     DateTime key = DateTime.now();
@@ -64,6 +71,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     await _firestore.collection('reading_logs').doc(user!.uid).set({'log': log});
   }
 
+  // 탭 변경 시 네비게이션
   void _onItemTapped(int index) {
     if (widget.onTabChanged != null) widget.onTabChanged!(index);
     if (index != widget.currentIndex) {
@@ -72,6 +80,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     }
   }
 
+  // 독서 시간에 따른 색상 반환
   Color _getColorBasedOnMinutes(int minutes) {
     if (minutes == 0) return Colors.transparent;
     if (minutes >= 180) return Colors.blue[900]!;
@@ -110,6 +119,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
       body: TabBarView(
         controller: _tabController,
         children: [
+          // 타이머 화면
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -156,6 +166,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
               ],
             ),
           ),
+          // 달력 화면
           SingleChildScrollView(
             child: Column(
               children: [
@@ -186,6 +197,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                   ),
                 ),
                 const SizedBox(height: 20),
+                // 이번달 독서 시간 계산 및 표시
                 Text(
                   "이번달 나는?\n총 ${_readingLog.entries.where((e) => e.key.month == _selectedDay.month).fold(0, (sum, e) => sum + e.value) ~/ 3600}시간 "
                       "${_readingLog.entries.where((e) => e.key.month == _selectedDay.month).fold(0, (sum, e) => sum + e.value) % 3600 ~/ 60}분 독서했어요.",

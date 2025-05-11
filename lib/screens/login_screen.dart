@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '/services/auth_service.dart';
 import '/services/kakao_login_service.dart';
+import '/services/naver_login_service.dart';
 import 'home_screen.dart';
 
 void main() async {
@@ -73,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _signInWithKakao() async {
     try {
-      await KakaoLoginService().signInWithKakao(); // ✅ 안전한 Kakao 로그인 사용
+      await KakaoLoginService().signInWithKakao();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kakao 로그인 성공!')),
       );
@@ -82,6 +83,22 @@ class _LoginPageState extends State<LoginPage> {
       print('Kakao 로그인 오류: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Kakao 로그인 실패: $e')),
+      );
+    }
+  }
+
+  Future<void> _signInWithNaver() async {
+    try {
+      // context를 전달
+      await NaverLoginService().signInWithNaver(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Naver 로그인 성공!')),
+      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+    } catch (e) {
+      print('Naver 로그인 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Naver 로그인 실패: $e')),
       );
     }
   }
@@ -195,10 +212,13 @@ class _LoginPageState extends State<LoginPage> {
                       child: Image.asset('assets/images/kakaoicon.png', width: 30, height: 30),
                     ),
                   ),
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFF03C75A),
-                    radius: 25,
-                    child: Image.asset('assets/images/navericon.png', width: 30, height: 30),
+                  GestureDetector(
+                    onTap: _signInWithNaver,
+                    child: CircleAvatar(
+                      backgroundColor: const Color(0xFF03C75A),
+                      radius: 25,
+                      child: Image.asset('assets/images/navericon.png', width: 30, height: 30),
+                    ),
                   ),
                   GestureDetector(
                     onTap: _signInWithGoogle,
