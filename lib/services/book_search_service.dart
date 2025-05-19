@@ -15,7 +15,8 @@ class BookSearchService {
 
   // 통합 검색 메서드 (제목 또는 저자 통합)
   Future<List<Map<String, dynamic>>> searchBooks(String query) async {
-    if (query.isEmpty) {
+    //두글자 이상 검색으로 수정
+    if (query.trim().length <2) {
       return [];
     }
 
