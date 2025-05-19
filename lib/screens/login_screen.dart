@@ -206,30 +206,62 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   GestureDetector(
                     onTap: _signInWithKakao,
-                    child: CircleAvatar(
-                      backgroundColor: const Color(0xFFFFE812),
-                      radius: 25,
-                      child: Image.asset('assets/images/kakaoicon.png', width: 30, height: 30),
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFFFE812),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/kakaoicon.png',
+                          width: 30,
+                          height: 30,
+                        ),
+                      ),
                     ),
                   ),
                   GestureDetector(
                     onTap: _signInWithNaver,
-                    child: CircleAvatar(
-                      backgroundColor: const Color(0xFF03C75A),
-                      radius: 25,
-                      child: Image.asset('assets/images/navericon.png', width: 30, height: 30),
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF03C75A),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/navericon.png',
+                          width: 30,
+                          height: 30,
+                        ),
+                      ),
                     ),
                   ),
                   GestureDetector(
                     onTap: _signInWithGoogle,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white,
-                      radius: 25,
-                      child: Image.asset('assets/images/googleicon.png', width: 30, height: 30),
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFF5F5F5),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/googleicon.png',
+                          width: 30,
+                          height: 30,
+                          fit: BoxFit.contain,  // 이 부분이 핵심
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
+
               const SizedBox(height: 16),
             ],
           ),

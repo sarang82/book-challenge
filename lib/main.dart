@@ -11,6 +11,8 @@ import 'screens/profile_screen.dart';
 import 'services/book_data_service.dart';
 import 'screens/timer_screen.dart';
 import 'screens/challenge_screen.dart';
+import 'screens/mission_screen.dart';
+import 'screens/mission_add_screen.dart';
 import 'services/book_search_service.dart';
 import 'screens/login_screen.dart';
 import 'package:provider/provider.dart';
@@ -24,13 +26,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // ✅ Kakao SDK 초기화
+    //  Kakao SDK 초기화
     KakaoSdk.init(
       nativeAppKey: '3994fcb20cffde63abe5d0db12a3a7ed', // ← 여기에 본인의 Kakao 네이티브 앱 키 입력
       javaScriptAppKey: '23b59a92b46c746ac380cd4c08cc2691', // 웹 로그인 연동시 필요 시 사용
     );
 
-    // ✅ Firebase 초기화
+    //  Firebase 초기화
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -38,7 +40,7 @@ void main() async {
       print('Firebase 초기화 성공');
     }
 
-    // ✅ 앱 시작
+    //  앱 시작
     runApp(
       ChangeNotifierProvider(
         create: (_) => TimerProvider(),
@@ -46,7 +48,7 @@ void main() async {
       ),
     );
 
-    // ✅ 백그라운드 데이터 초기화
+    //  백그라운드 데이터 초기화
     _initializeDataInBackground();
 
   } catch (e) {
@@ -92,6 +94,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/timer': (context) => const TimerScreen(),
         '/challenge': (context) => const ChallengeScreen(),
+        '/mission': (context) => const MissionScreen(),
         '/newChallenge': (context) => const ChallengeAddScreen(),
       },
     );
