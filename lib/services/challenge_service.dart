@@ -34,7 +34,7 @@ class ChallengeService {
       'type': type,
       'startDate': Timestamp.fromDate(startDate),
       'endDate': Timestamp.fromDate(endDate),
-      'itemPage': parseItemPage(bookDetail?['subInfo']['itemPage']),
+      'itemPage': bookDetail?['itemPage'] ?? 0,
       'pagesRead': 0,
       'createdAt': FieldValue.serverTimestamp(),
     });
