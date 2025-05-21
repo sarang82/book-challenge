@@ -7,6 +7,7 @@ import '../services/aladin_service.dart';
 import '../services/firestore_service.dart';
 import '../services/my_library_service.dart'; // 내 서재 서비스 추가
 import '../widgets/bottom_nav_bar.dart';
+import './book_review_tab.dart';
 
 class BookInfoScreen extends StatefulWidget {
   final Map<String, dynamic>? bookData;
@@ -912,6 +913,7 @@ class BookInfoContent extends StatelessWidget {
         BookInfoTabs(tabController: tabController),
 
         // 탭 콘텐츠 - Expanded로 감싸서 남은 공간을 모두 사용하게 함
+        // 탭 콘텐츠 - Expanded로 감싸서 남은 공간을 모두 사용하게 함
         Expanded(
           child: TabBarView(
             controller: tabController,
@@ -919,9 +921,12 @@ class BookInfoContent extends StatelessWidget {
               // 상세 정보 탭 - 왼쪽 정렬 유지
               _buildDetailsTab(),
 
-              // 리뷰 탭 (미구현)
-              const Center(
-                child: Text('리뷰 기능은 준비 중입니다!'),
+              // 리뷰 탭 - BookReviewTab 컴포넌트 사용
+              BookReviewTab(
+                isbn: bookData['isbn'] ?? '',
+                title: bookData['title'] ?? '',
+                author: bookData['author'] ?? '',
+                coverUrl: bookData['coverUrl'] ?? '',
               ),
             ],
           ),
