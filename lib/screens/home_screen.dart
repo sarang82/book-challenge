@@ -396,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
             const SizedBox(height: 25),
-            const Text('[아몬드 3일만에 읽기] 챌린지 현황',
+            const Text('[아몬드 3일만에 읽기] ',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 10),
             Stack(
