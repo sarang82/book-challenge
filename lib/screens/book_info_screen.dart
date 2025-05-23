@@ -608,7 +608,9 @@ class _AddToLibraryBottomSheetState extends State<AddToLibraryBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      color: Colors.white,
+      child: Padding(
       padding: EdgeInsets.only(
         left: 16.0,
         right: 16.0,
@@ -619,6 +621,7 @@ class _AddToLibraryBottomSheetState extends State<AddToLibraryBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           // 타이틀
           Padding(
             padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
@@ -746,6 +749,7 @@ class _AddToLibraryBottomSheetState extends State<AddToLibraryBottomSheet> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -778,6 +782,7 @@ class _AddToLibraryBottomSheetState extends State<AddToLibraryBottomSheet> {
           ],
         ],
       ),
+    )
     );
   }
 

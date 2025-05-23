@@ -1,4 +1,3 @@
-// 생략된 import 생략 없이 포함
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -138,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('내 정보'),
+        title: const Text('내 정보', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -181,8 +180,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 20),
             _buildTextField('닉네임', _nicknameController, enabled: _isEditing),
-            _buildTextField('아이디', _userIdController, enabled: _isEditing),
-            _buildTextField('이메일', _emailController, enabled: _isEditing),
+            _buildTextField('UID', _userIdController),
+            _buildTextField('이메일', _emailController),
             _buildTextField('생년월일', _birthdateController, enabled: _isEditing),
             _buildGenderSelector(),
             const SizedBox(height: 24),

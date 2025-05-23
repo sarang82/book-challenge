@@ -132,12 +132,12 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 30),
                 const Text(
                   '로그인 후 이용 가능합니다.',
                   style: TextStyle(color: Colors.grey),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 TextField(
                   controller: _emailController,
                   decoration: InputDecoration(
@@ -202,7 +202,12 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: _login,
                     child: const Text(
                       '로그인',
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                      ),
+
                     ),
                   ),
                 ),

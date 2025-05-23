@@ -6,7 +6,6 @@ import '../widgets/bottom_nav_bar.dart';
 import '../providers/timer_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-
 class TimerScreen extends StatefulWidget {
   final Function(int)? onTabChanged;
   final int currentIndex;
@@ -36,29 +35,55 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     _loadUserReadingLog();
   }
 
+// Firebase에서 독서 기록 불러오기
   Future<void> _loadUserReadingLog() async {
     if (user == null) return;
     final snapshot = await _firestore.collection('reading_logs').doc(user!.uid).get();
+
     if (snapshot.exists) {
       final Map<String, dynamic> logs = snapshot.data()?['log'] ?? {};
+      print("[READING_LOG] Raw Firestore Data: $logs"); // Firestore 원본 데이터
+
       setState(() {
+        // 파싱
         _readingLog = logs.map((key, value) {
-          final parts = key.split('-').map(int.parse).toList();
-          return MapEntry(DateTime(parts[0], parts[1], parts[2]), value as int);
-        });
+          try {
+            // "2025-4-5" -> DateTime(2025, 4, 5) 변환
+            final parts = key.split('-');
+            final year = int.parse(parts[0]);
+            final month = int.parse(parts[1]);
+            final day = int.parse(parts[2]);
+            final parsedDate = DateTime(year, month, day);
+
+            print("[READING_LOG] Parsed Date: $parsedDate, Value: $value"); // 파싱된 데이터
+            return MapEntry(parsedDate, value as int);
+          } catch (e) {
+            print("[READING_LOG] Parsing Error: $e");
+            return MapEntry(DateTime(1900), 0); // 파싱 실패한 항목 무시
+          }
+        })
+          ..removeWhere((key, value) => key.year == 1900); // 잘못된 항목 제거
+
+        // 최종 변환 결과 확인
+        print("[READING_LOG] Final _readingLog: $_readingLog");
       });
     }
   }
 
+
+
+
+  // 누적 시간 저장
   Future<void> _saveReadingLog(int seconds) async {
     if (user == null) return;
-    DateTime key = DateTime.now();
-    key = DateTime(key.year, key.month, key.day);
+    DateTime now = DateTime.now();
+    DateTime key = DateTime(now.year, now.month, now.day);
+
     _readingLog[key] = (_readingLog[key] ?? 0) + seconds;
 
     final log = {
       for (var e in _readingLog.entries)
-        '${e.key.year}-${e.key.month}-${e.key.day}': e.value
+        '${e.key.year}-${e.key.month.toString().padLeft(2, '0')}-${e.key.day.toString().padLeft(2, '0')}': e.value,
     };
 
     await _firestore.collection('reading_logs').doc(user!.uid).set({'log': log});
@@ -72,6 +97,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     }
   }
 
+  // 누적 시간에 따른 색상
   Color _getColorBasedOnMinutes(int minutes) {
     if (minutes == 0) return Colors.transparent;
     if (minutes >= 180) return Colors.blue[900]!;
@@ -85,7 +111,8 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     final timerProvider = Provider.of<TimerProvider>(context);
 
-    int todaySeconds = _readingLog[DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)] ?? 0;
+    DateTime todayKey = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    int todaySeconds = _readingLog[todayKey] ?? 0;
     int displaySeconds = timerProvider.seconds;
     int totalToday = todaySeconds + displaySeconds;
 
@@ -97,10 +124,10 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('타이머'),
+        title: const Text('타이머', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         centerTitle: true,
         bottom: TabBar(
-          labelColor: Colors.black,            // 선택된 탭 글씨 색
+          labelColor: Colors.black,
           unselectedLabelColor: Colors.grey,
           indicatorColor: Colors.black,
           controller: _tabController,
@@ -110,6 +137,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
       body: TabBarView(
         controller: _tabController,
         children: [
+          // 타이머 화면
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -125,7 +153,8 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                         timerProvider.stop();
                         await _saveReadingLog(timerProvider.seconds);
                         timerProvider.reset();
-                        _loadUserReadingLog(); // UI 갱신
+                        await _loadUserReadingLog(); // 업데이트 반영
+                        setState(() {});
                       }
                           : null,
                       child: const Text('중지'),
@@ -150,12 +179,15 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                   ],
                 ),
                 const SizedBox(height: 30),
-                Text("오늘 나는\n${totalToday ~/ 3600}시간 ${(totalToday % 3600) ~/ 60}분\n독서했어요.",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(
+                  "오늘 나는\n${totalToday ~/ 3600}시간 ${(totalToday % 3600) ~/ 60}분\n독서했어요.",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
           ),
+          // 달력 화면
           SingleChildScrollView(
             child: Column(
               children: [
@@ -186,12 +218,28 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  "이번달 나는?\n총 ${_readingLog.entries.where((e) => e.key.month == _selectedDay.month).fold(0, (sum, e) => sum + e.value) ~/ 3600}시간 "
-                      "${_readingLog.entries.where((e) => e.key.month == _selectedDay.month).fold(0, (sum, e) => sum + e.value) % 3600 ~/ 60}분 독서했어요.",
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
+                // 이번 달 누적 시간
+                Builder(
+                  builder: (context) {
+                    final now = DateTime.now();
+                    final thisMonthLogs = _readingLog.entries.where((e) {
+                      final entryDate = DateTime(e.key.year, e.key.month, e.key.day);
+                      final today = DateTime(now.year, now.month);
+                      return entryDate.year == today.year && entryDate.month == today.month;
+                    });
+
+                    final totalSeconds = thisMonthLogs.fold(0, (sum, e) => sum + e.value);
+                    print("[READING_LOG] 이번달 누적 시간: $totalSeconds 초, Logs: $thisMonthLogs"); // 누적 시간 디버그
+
+                    return Text(
+                      "이번달 나는?\n총 ${totalSeconds ~/ 3600}시간 ${(totalSeconds % 3600) ~/ 60}분 독서했어요.",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    );
+                  },
                 ),
+
+
               ],
             ),
           ),

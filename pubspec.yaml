@@ -70,6 +70,7 @@ flutter:
     - assets/images/iPhone 15 Pro Max.png
     - assets/images/kakaoicon.png
     - assets/images/navericon.png
+    - assets/images/Prize.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
