@@ -59,7 +59,67 @@ class ChallengeService {
         .toList(); //리스트로 반환
 }
 
+  // 오늘 읽은 페이지 조회
+  Future<int> getTodayPagesRead(String challengeId, String userId) async {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 9));
+    final formattedDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
+    final doc = await _firestore
+        .collection('challenge')
+        .doc(challengeId)
+        .collection('pagesRead')
+        .doc(userId)
+        .collection('daily')
+        .doc(formattedDate)
+        .get();
+
+    if (doc.exists) {
+      final data = doc.data();
+      return data?['pagesRead'] ?? 0;
+    } else {
+      return 0;
+    }
+  }
+
+
+// 오늘 읽은 페이지 저장
+  Future<void> saveTodayPagesRead(
+      String challengeId, String userId, int pages) async {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 9));  // UTC+9로 보정
+    final formattedDate = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+    await _firestore
+        .collection('challenge')
+        .doc(challengeId)
+        .collection('pagesRead')
+        .doc(userId)
+        .collection('daily')
+        .doc(formattedDate)
+        .set({
+      'pagesRead': pages,
+      'date': formattedDate,
+    });
+  }
+
+  //히스토리
+  Future<List<DailyPageRead>> getAllPagesRead(String challengeId, String userId) async {
+    final snapshot = await _firestore
+        .collection('challenge')
+        .doc(challengeId)
+        .collection('pagesRead')
+        .doc(userId)
+        .collection('daily')
+        .orderBy('date')  // 날짜순 정렬 (날짜 필드가 있어야 함)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return DailyPageRead(
+        date: data['date'] ?? '',
+        pagesRead: data['pagesRead'] ?? 0,
+      );
+    }).toList();
+  }
 
 }
 int parseItemPage(dynamic page) {
@@ -118,4 +178,12 @@ class Challenge {
       pagesRead: data['pagesRead'] ?? 0,
     );
   }
+}
+
+// 모델 클래스 예시
+class DailyPageRead {
+  final String date;
+  final int pagesRead;
+
+  DailyPageRead({required this.date, required this.pagesRead});
 }

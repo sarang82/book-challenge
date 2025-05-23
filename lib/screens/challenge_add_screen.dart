@@ -396,16 +396,6 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                         return;
                       }
 
-                      // null이 아니므로 아래 호출 가능
-                      await ChallengeService().createChallenge(
-                        title: _titleController.text,
-                        type: _selectedGoalType == '타이머 사용' ? '시간' : '페이지',
-                        description: _descriptionController.text,
-                        startDate: _startDate!,  // null 아님을 명시
-                        endDate: _endDate!,      // null 아님을 명시
-                        bookId: _selectedBook?['isbn'] ?? '',
-                      );
-
                       if (_startDate!.isAfter(_endDate!)) {
                         ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('시작 날짜는 종료 날짜보다 빨라야 합니다.'))

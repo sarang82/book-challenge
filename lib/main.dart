@@ -12,7 +12,6 @@ import 'screens/profile_screen.dart';
 import 'services/book_data_service.dart';
 import 'screens/timer_screen.dart';
 import 'screens/challenge_screen.dart';
-import 'services/book_search_service.dart';
 import 'screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
