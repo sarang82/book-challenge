@@ -41,7 +41,6 @@ class _MissionScreenState extends State<MissionScreen> {
     }
   }
 
-  // 진행 중인 미션 불러오기
   Future<List<Map<String, dynamic>>> fetchOngoingMissions() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
@@ -52,10 +51,12 @@ class _MissionScreenState extends State<MissionScreen> {
         .where('status', isEqualTo: 'ongoing')
         .get();
 
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    return snapshot.docs.map((doc) => {
+      ...doc.data(),
+      'id': doc.id
+    }).toList();
   }
 
-  // 완료된 미션 불러오기
   Future<List<Map<String, dynamic>>> fetchCompletedMissions() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
@@ -63,13 +64,26 @@ class _MissionScreenState extends State<MissionScreen> {
     final snapshot = await FirebaseFirestore.instance
         .collection('missions')
         .where('userId', isEqualTo: user.uid)
-        .where('status', isEqualTo: 'completed')
+        .where('status', whereIn: ['completed', 'failed'])
         .get();
 
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    return snapshot.docs.map((doc) {
+      var data = doc.data();
+      return {
+        ...data,
+        'id': doc.id,
+      };
+    }).toList();
   }
 
-  // 진행 중인 미션 뷰
+  Future<void> updateMissionStatus(String missionId, String status) async {
+    await FirebaseFirestore.instance
+        .collection('missions')
+        .doc(missionId)
+        .update({'status': status});
+    setState(() {});
+  }
+
   Widget _buildOngoingMissionsView() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: fetchOngoingMissions(),
@@ -85,17 +99,26 @@ class _MissionScreenState extends State<MissionScreen> {
         final missions = snapshot.data!;
         return ListView.separated(
           itemCount: missions.length,
-          separatorBuilder: (context, index) => Divider(
-            color: Colors.grey,
-            thickness: 1,
-            height: 1,
-          ),
+          separatorBuilder: (context, index) => const Divider(color: Colors.grey, thickness: 1, height: 1),
           itemBuilder: (context, index) {
             final mission = missions[index];
             return ListTile(
               leading: Image.asset('assets/images/Sea_otter.png', width: 40, height: 40),
               title: Text(mission['title'] ?? '제목 없음'),
               subtitle: Text(mission['description'] ?? ''),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.check, color: Colors.black),
+                    onPressed: () => updateMissionStatus(mission['id'], 'completed'),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black),
+                    onPressed: () => updateMissionStatus(mission['id'], 'failed'),
+                  ),
+                ],
+              ),
             );
           },
         );
@@ -103,7 +126,6 @@ class _MissionScreenState extends State<MissionScreen> {
     );
   }
 
-  // 완료된 미션 뷰
   Widget _buildCompletedMissionsView() {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: fetchCompletedMissions(),
@@ -119,16 +141,24 @@ class _MissionScreenState extends State<MissionScreen> {
         final missions = snapshot.data!;
         return ListView.separated(
           itemCount: missions.length,
-          separatorBuilder: (context, index) => Divider(
-            color: Colors.grey,
-            thickness: 1,
-            height: 1,
-          ),
+          separatorBuilder: (context, index) =>
+          const Divider(color: Colors.grey, thickness: 1, height: 1),
           itemBuilder: (context, index) {
             final mission = missions[index];
+            final isFailed = mission['status'] == 'failed';
+
             return ListTile(
-              leading: Image.asset('assets/images/Sea_otter.png', width: 40, height: 40),
-              title: Text(mission['title'] ?? '제목 없음'),
+              leading: Image.asset(
+                isFailed
+                    ? 'assets/images/Sea_otter.png'
+                    : 'assets/images/Prize.png',
+                width: 40,
+                height: 40,
+              ),
+              title: Text(
+                mission['title'] ?? '제목 없음' + (isFailed ? ' (실패)' : ''),
+                style: TextStyle(color:Colors.black),
+              ),
               subtitle: Text(mission['description'] ?? ''),
             );
           },
@@ -137,7 +167,7 @@ class _MissionScreenState extends State<MissionScreen> {
     );
   }
 
-  // 미션 없을 때 보여줄 뷰
+
   Widget _buildEmptyMissionView(String message) {
     final parts = message.split('시작');
     return Center(
@@ -217,6 +247,17 @@ class _MissionScreenState extends State<MissionScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MissionAddScreen()),
+          );
+        },
+        backgroundColor: Colors.white,
+        child: const Icon(Icons.add),
+      ),
+
     );
   }
 }

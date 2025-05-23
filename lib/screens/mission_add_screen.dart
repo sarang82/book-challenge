@@ -18,10 +18,8 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final MissionService _missionService = MissionService();
 
-
   DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now().add(const Duration(days: 31)); // 종료 날짜
-  String _selectedBookSource = '내 서재에서 가져오기';
+  DateTime _endDate = DateTime.now(); // 종료 날짜를 시작 날짜와 동일하게
 
   String? _recommendedMission;
   String _newMission = '';
@@ -43,7 +41,6 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
       'description': _descriptionController.text,
       'startDate': _startDate,
       'endDate': _endDate,
-      'bookSource': _selectedBookSource,
       'createdAt': Timestamp.now(),
       'userId': FirebaseAuth.instance.currentUser?.uid,  // 사용자 ID 추가
       'status': 'ongoing',
@@ -76,34 +73,6 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
       });
       print('미션 추천 중 오류 발생: $e');
     }
-  }
-
-
-  // 날짜 선택을 위한 함수
-  void _showDatePicker(bool isStartDate) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      builder: (_) {
-        return SizedBox(
-          height: 300,
-          child: CupertinoDatePicker(
-            backgroundColor: Colors.white,
-            mode: CupertinoDatePickerMode.date,
-            initialDateTime: isStartDate ? _startDate : _endDate,
-            onDateTimeChanged: (DateTime newDate) {
-              setState(() {
-                if (isStartDate) {
-                  _startDate = newDate;
-                } else {
-                  _endDate = newDate;
-                }
-              });
-            },
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -148,82 +117,17 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
                 decoration: const InputDecoration(labelText: '미션 설명'),
               ),
               const SizedBox(height: 16),
-              // 날짜 선택 (시작 날짜, 종료 날짜)
-              const Text('미션 기간을 설정하세요', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('시작 날짜'),
-                      TextButton(
-                        onPressed: () => _showDatePicker(true),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.black,
-                          backgroundColor: Colors.white,
-                          padding:const EdgeInsets.symmetric(horizontal :16, vertical : 8),
-                          shape : RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          )
-                        ),
-                        child: Text(
-                          '${_startDate.year}.${_startDate.month}.${_startDate.day}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      )
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('종료 날짜'),
-                      TextButton(
-                        onPressed: () => _showDatePicker(false),
-                        style: TextButton.styleFrom(
-                            foregroundColor: Colors.black,
-                            backgroundColor: Colors.white,
-                            padding:const EdgeInsets.symmetric(horizontal :16, vertical : 8),
-                            shape : RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            )
-                        ),
-                        child: Text(
-                          '${_endDate.year}.${_endDate.month}.${_endDate.day}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      )
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              // 목표 도서 선택
-              const Text('목표 도서를 선택하세요', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _selectedBookSource,
-                items: const [
-                  DropdownMenuItem(value: '내 서재에서 가져오기', child: Text('내 서재에서 가져오기')),
-                  DropdownMenuItem(value: '검색으로 가져오기', child: Text('검색으로 가져오기')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedBookSource = value!;
-                  });
-                },
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w300,
+              // 오늘 날짜 표시
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(borderSide: BorderSide.none),
-                  filled: true,
-                  fillColor: Color(0xFFF5F5F5),
+                child: Text(
+                  '기간 : ${_startDate.year}.${_startDate.month}.${_startDate.day}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
-                dropdownColor: Colors.white,
               ),
               const SizedBox(height: 40),
               // 미션 등록 버튼
