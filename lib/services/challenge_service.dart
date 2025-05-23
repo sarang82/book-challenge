@@ -5,6 +5,7 @@ import 'aladin_service.dart';
 class ChallengeService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AladinService _aladinService = AladinService();
 
   //챌린지 생성
   Future<void> createChallenge({
@@ -18,14 +19,23 @@ class ChallengeService {
     final uid = _auth.currentUser?.uid;
     if(uid == null) throw Exception("로그인된 사용자가 없습니다.");
 
+    // AladinService로 책 상세정보 받아오기
+    final bookDetail = await _aladinService.fetchBookDetail(bookId);
+    final coverUrl = bookDetail?['coverUrl'] ?? ''; // coverUrl이 없으면 빈 문자열로
+    final bookTitle = bookDetail?['title'] ?? '';
+
     await _firestore.collection('challenge').add({
       'userId': uid,
       'isbn': bookId,
+      'coverUrl': coverUrl,
       'title': title,
+      'bookTitle': bookTitle,
       'description':description,
       'type': type,
       'startDate': Timestamp.fromDate(startDate),
       'endDate': Timestamp.fromDate(endDate),
+      'itemPage': bookDetail?['itemPage'] ?? 0,
+      'pagesRead': 0,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -49,6 +59,20 @@ class ChallengeService {
         .toList(); //리스트로 반환
 }
 
+
+
+}
+int parseItemPage(dynamic page) {
+  if (page == null) return 0;
+  if (page is int) return page;
+  if (page is String) {
+    try {
+      return int.parse(page);
+    } catch (_) {
+      return 0;
+    }
+  }
+  return 0;
 }
 //챌린지 객체
 class Challenge {
@@ -59,6 +83,10 @@ class Challenge {
   final DateTime startDate;
   final DateTime endDate;
   final String isbn;
+  final String coverUrl;
+  final String bookTitle;
+  final int itemPage;
+  final int pagesRead;
 
   Challenge({
     required this.id,
@@ -68,6 +96,10 @@ class Challenge {
     required this.startDate,
     required this.endDate,
     required this.isbn,
+    required this.coverUrl,
+    required this.bookTitle,
+    required this.itemPage,
+    required this.pagesRead,
   });
 
   factory Challenge.fromDocument(DocumentSnapshot doc) {
@@ -75,11 +107,15 @@ class Challenge {
     return Challenge(
       id: doc.id,
       title: data['title'] ?? '',
+      bookTitle: data['bookTitle'] ?? '',
       description: data['description'] ?? '',
       type: data['type'] ?? '',
       startDate: (data['startDate'] as Timestamp).toDate(),
       endDate: (data['endDate'] as Timestamp).toDate(),
       isbn: data['isbn'] ?? '',
+      coverUrl: data['coverUrl'] ?? '',
+      itemPage: data['itemPage'] ?? 0,
+      pagesRead: data['pagesRead'] ?? 0,
     );
   }
 }

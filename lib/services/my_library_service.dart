@@ -25,7 +25,180 @@ class MyLibraryService {
     DateTime? endDate,
   }) async {
     try {
-      // 로그인 확인
+      // 로그인 확인import 'package:flutter/material.dart';
+      // import '../widgets/bottom_nav_bar.dart';
+      // import '../services/challenge_service.dart';
+      //
+      // class ChallengeScreen extends StatefulWidget {
+      //   const ChallengeScreen({super.key});
+      //
+      //   @override
+      //   State<ChallengeScreen> createState() => _ChallengeScreenState();
+      // }
+      //
+      // class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProviderStateMixin {
+      //   int _selectedIndex = 1;
+      //   bool _isLoading = true;
+      //   bool _isRefreshing = false;
+      //   late TabController _tabController;
+      //
+      //   final ChallengeService _challengeService = ChallengeService();
+      //   List<Challenge> _challenges = [];
+      //
+      //   void _onItemTapped(int index) {
+      //     if (_selectedIndex != index) {
+      //       setState(() => _selectedIndex = index);
+      //       switch (index) {
+      //         case 0: Navigator.pushReplacementNamed(context, '/timer'); break;
+      //         case 1: break;
+      //         case 2: Navigator.pushReplacementNamed(context, '/home'); break;
+      //         case 3: Navigator.pushReplacementNamed(context, '/library'); break;
+      //         case 4: Navigator.pushReplacementNamed(context, '/profile'); break;
+      //       }
+      //     }
+      //   }
+      //
+      //   @override
+      //   void initState() {
+      //     super.initState();
+      //     _tabController = TabController(length: 2, vsync: this);
+      //     _loadInitialData();
+      //   }
+      //
+      //   @override
+      //   void dispose() {
+      //     _tabController.dispose();
+      //     super.dispose();
+      //   }
+      //
+      //   Future<void> _loadInitialData() async {
+      //     if (_isRefreshing) return;
+      //     final challenges = await _challengeService.getChallenges();
+      //     setState(() {
+      //       _challenges = challenges;
+      //       _isLoading = false;
+      //       _isRefreshing = false;
+      //     });
+      //   }
+      //
+      //   Widget _buildChallengeCard(Challenge challenge) {
+      //     final imageUrl = 'https://covers.openlibrary.org/b/isbn/${challenge.isbn}-L.jpg';
+      //
+      //     return Card(
+      //       elevation: 3,
+      //       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      //       child: Padding(
+      //         padding: const EdgeInsets.all(12.0),
+      //         child: Row(
+      //           crossAxisAlignment: CrossAxisAlignment.start,
+      //           children: [
+      //             // 책 이미지
+      //             ClipRRect(
+      //               borderRadius: BorderRadius.circular(8),
+      //               child: Image.network(
+      //                 imageUrl,
+      //                 width: 80,
+      //                 height: 110,
+      //                 fit: BoxFit.cover,
+      //                 errorBuilder: (context, error, stackTrace) {
+      //                   return Container(
+      //                     width: 80,
+      //                     height: 110,
+      //                     color: Colors.grey[300],
+      //                     child: const Icon(Icons.image_not_supported),
+      //                   );
+      //                 },
+      //               ),
+      //             ),
+      //             const SizedBox(width: 16),
+      //             // 텍스트 정보
+      //             Expanded(
+      //               child: Column(
+      //                 crossAxisAlignment: CrossAxisAlignment.start,
+      //                 children: [
+      //                   Text(
+      //                     challenge.title,
+      //                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      //                   ),
+      //                   const SizedBox(height: 6),
+      //                   Text(
+      //                     'ISBN: ${challenge.isbn}',
+      //                     style: const TextStyle(fontSize: 14),
+      //                   ),
+      //                   const SizedBox(height: 4),
+      //                   Text(
+      //                     '기간: ${challenge.startDate.toLocal().toString().split(' ')[0]} ~ ${challenge.endDate.toLocal().toString().split(' ')[0]}',
+      //                     style: const TextStyle(fontSize: 13, color: Colors.grey),
+      //                   ),
+      //                   const SizedBox(height: 8),
+      //                   Text(
+      //                     challenge.description,
+      //                     style: const TextStyle(fontSize: 14),
+      //                     maxLines: 3,
+      //                     overflow: TextOverflow.ellipsis,
+      //                   ),
+      //                 ],
+      //               ),
+      //             ),
+      //           ],
+      //         ),
+      //       ),
+      //     );
+      //   }
+      //
+      //   @override
+      //   Widget build(BuildContext context) {
+      //     final ongoing = _challenges.where((c) => c.endDate.isAfter(DateTime.now())).toList();
+      //     final completed = _challenges.where((c) => c.endDate.isBefore(DateTime.now())).toList();
+      //
+      //     return Scaffold(
+      //       backgroundColor: Colors.white,
+      //       appBar: AppBar(
+      //         backgroundColor: Colors.white,
+      //         title: const Text('챌린지', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      //         centerTitle: true,
+      //         bottom: TabBar(
+      //           controller: _tabController,
+      //           labelColor: Colors.black,
+      //           unselectedLabelColor: Colors.grey,
+      //           indicatorColor: Colors.black,
+      //           tabs: const [
+      //             Tab(text: '진행 중'),
+      //             Tab(text: '완료'),
+      //           ],
+      //         ),
+      //       ),
+      //       body: _isLoading
+      //           ? const Center(child: CircularProgressIndicator())
+      //           : TabBarView(
+      //               controller: _tabController,
+      //               children: [
+      //                 ongoing.isEmpty
+      //                     ? const Center(child: Text('진행 중인 챌린지가 없습니다.'))
+      //                     : ListView.builder(
+      //                         itemCount: ongoing.length,
+      //                         itemBuilder: (context, index) {
+      //                           return _buildChallengeCard(ongoing[index]);
+      //                         },
+      //                       ),
+      //                 completed.isEmpty
+      //                     ? const Center(child: Text('완료한 챌린지가 없습니다.'))
+      //                     : ListView.builder(
+      //                         itemCount: completed.length,
+      //                         itemBuilder: (context, index) {
+      //                           return _buildChallengeCard(completed[index]);
+      //                         },
+      //                       ),
+      //               ],
+      //             ),
+      //       bottomNavigationBar: BottomNavBar(
+      //         currentIndex: _selectedIndex,
+      //         onTap: _onItemTapped,
+      //       ),
+      //     );
+      //   }
+      //
       final String? userId = currentUserId;
       if (userId == null) {
         if (kDebugMode) {

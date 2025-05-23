@@ -1,50 +1,28 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.book_tracking_app">
 
-    <!-- 인터넷 권한 추가 -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:label="book_tracking_app"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true">
+        android:icon="@mipmap/ic_launcher">
 
-        <!-- Firebase 및 Google Play Services 설정 -->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <!-- Firebase 앱 ID 설정 -->
         <meta-data
             android:name="google_app_id"
             android:value="1:57159075316:android:839745be9e8053ec02e5a1" />
 
-        <!-- Firebase 프로젝트 ID -->
         <meta-data
             android:name="project_id"
             android:value="talkdok-cf1b4" />
 
-        <!-- Kakao SDK App Key -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
             android:value="3994fcb20cffde63abe5d0db12a3a7ed" />
-
-        <!-- ✅ Kakao Custom Tabs Activity for Web Login -->
-        <activity
-            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
-            android:exported="true">
-            <intent-filter android:label="flutter_web_auth">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="kakao3994fcb20cffde63abe5d0db12a3a7ed"
-                    android:host="oauth" />
-            </intent-filter>
-        </activity>
 
         <activity
             android:name=".MainActivity"
@@ -63,11 +41,8 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <!-- 이건 생략 가능 (웹 로그인 리디렉션은 위에서 처리) -->
         </activity>
 
-        <!-- Flutter 설정 -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

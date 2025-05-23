@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../services/challenge_service.dart';
+import 'challenge_info_screen.dart';
 
 class ChallengeScreen extends StatefulWidget {
   const ChallengeScreen({super.key});
@@ -10,41 +11,23 @@ class ChallengeScreen extends StatefulWidget {
 }
 
 class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProviderStateMixin {
-  int _selectedIndex = 1; // 챌린지 화면은 인덱스 1
+  int _selectedIndex = 1;
   bool _isLoading = true;
   bool _isRefreshing = false;
   late TabController _tabController;
 
-  //챌린지 띄우기
   final ChallengeService _challengeService = ChallengeService();
   List<Challenge> _challenges = [];
 
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-
+      setState(() => _selectedIndex = index);
       switch (index) {
-        case 0:
-        // 타이머 화면으로 이동
-          Navigator.pushReplacementNamed(context, '/timer');
-          break;
-        case 1:
-        // 이미 챌린지 화면이므로 아무 작업 안함
-          break;
-        case 2:
-        // 홈 화면으로 이동
-          Navigator.pushReplacementNamed(context, '/home');
-          break;
-        case 3:
-        // 서재 화면으로 이동
-          Navigator.pushReplacementNamed(context, '/library');
-          break;
-        case 4:
-        // 프로필 화면으로 이동
-          Navigator.pushReplacementNamed(context, '/profile');
-          break;
+        case 0: Navigator.pushReplacementNamed(context, '/timer'); break;
+        case 1: break;
+        case 2: Navigator.pushReplacementNamed(context, '/home'); break;
+        case 3: Navigator.pushReplacementNamed(context, '/library'); break;
+        case 4: Navigator.pushReplacementNamed(context, '/profile'); break;
       }
     }
   }
@@ -53,8 +36,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-
-    // 초기 데이터 로드
     _loadInitialData();
   }
 
@@ -64,11 +45,9 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
     super.dispose();
   }
 
-  // 초기 데이터 로드 (최적화된 방식)
   Future<void> _loadInitialData() async {
-    if (_isRefreshing) return; // 이미 새로고침 중이면 중복 호출 방지
+    if (_isRefreshing) return;
     final challenges = await _challengeService.getChallenges();
-
     setState(() {
       _challenges = challenges;
       _isLoading = false;
@@ -76,20 +55,99 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
     });
   }
 
+  Widget _buildChallengeCard(Challenge challenge) {
+    final imageUrl = challenge.coverUrl;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          imageUrl,
+          width: 80,
+          height: 150,
+          fit: BoxFit.contain,
+          cacheWidth: 200,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(
+              width: 80,
+              height: 150,
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: 80,
+              height: 110,
+              color: Colors.grey[300],
+              child: const Icon(Icons.book, size: 30, color: Colors.grey),
+            );
+          },
+        ),
+      ),
+      title: Text(
+        challenge.title,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          //const SizedBox(height: 4),
+          Text(
+            '<${challenge.bookTitle}>',
+            style: const TextStyle(fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            challenge.description,
+            style: const TextStyle(fontSize: 14),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '기간: ${challenge.startDate.toLocal().toString().split(' ')[0]} ~ ${challenge.endDate.toLocal().toString().split(' ')[0]}',
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+
+        ],
+
+      ),
+
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChallengeInfoScreen(challenge: challenge),
+          ),
+        );
+      },
+
+
+    );
+
+
+
+
+  }
+
   @override
   Widget build(BuildContext context) {
-    //진행중/완료 나누기
-    final ongoing = _challenges
-        .where((c) => c.endDate.isAfter(DateTime.now())).toList();
-    final completed = _challenges
-        .where((c) => c.endDate.isBefore(DateTime.now())).toList();
+    final ongoing = _challenges.where((c) => c.endDate.isAfter(DateTime.now())).toList();
+    final completed = _challenges.where((c) => c.endDate.isBefore(DateTime.now())).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('챌린지',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        title: const Text('챌린지', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
@@ -107,45 +165,31 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
           : TabBarView(
         controller: _tabController,
         children: [
-          //진행 중 탭
           ongoing.isEmpty
-          ? const Center(child: Text('진행 중인 챌린지가 없습니다.'))
-          : ListView.builder(
+              ? const Center(child: Text('진행 중인 챌린지가 없습니다.'))
+              : ListView.separated(
             itemCount: ongoing.length,
             itemBuilder: (context, index) {
-              final challenge = ongoing[index];
-              return Column(
-                children: [
-                  ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: AssetImage('assets/images/Sea_otter.png'),
-                      backgroundColor: Colors.white,
-                    ),
-                    title: Text(challenge.title),
-                    subtitle: Text(challenge.description),
-                  ),
-                  Divider(), // ListTile 뒤에 구분선 추가
-                ],
-              );
+              return _buildChallengeCard(ongoing[index]);
             },
+            separatorBuilder: (context, index) => const Divider(
+              thickness: 0.5,
+              height: 1,
+              color: Colors.grey,
+            ),
           ),
-          // 완료 탭
           completed.isEmpty
               ? const Center(child: Text('완료한 챌린지가 없습니다.'))
-              : ListView.builder(
+              : ListView.separated(
             itemCount: completed.length,
             itemBuilder: (context, index) {
-              final challenge = completed[index];
-              return Column(
-                children: [
-                  ListTile(
-                    title: Text(challenge.title),
-                    subtitle: Text(challenge.description),
-                  ),
-                  Divider(), // ListTile 뒤에 구분선 추가
-                ],
-              );
+              return _buildChallengeCard(completed[index]);
             },
+            separatorBuilder: (context, index) => const Divider(
+              thickness: 0.5,
+              height: 1,
+              color: Colors.grey,
+            ),
           ),
         ],
       ),
