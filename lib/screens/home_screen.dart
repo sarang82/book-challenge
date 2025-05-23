@@ -154,6 +154,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  // 독서 메모 작성 화면으로 이동
+  void _navigateToReadingMemo() {
+    Navigator.pushNamed(context, '/readingMemo');
+  }
+
+  // 독서 기록 목록 화면으로 이동
+  void _navigateToReadingRecords() {
+    Navigator.pushNamed(context, '/readingRecords');
+  }
+
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -206,11 +216,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           children: [
             Column(
               children: [
-                const SizedBox(height: 20),
-                _buildMainCard(),
-                const SizedBox(height: 20),
-                Expanded(child: _buildWaveBackground()),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 20),
+                        _buildMainCard(),
+                        const SizedBox(height: 20),
+                        _buildReadingMemoSection(),
+                        const SizedBox(height: 120),
+                      ],
+                    ),
+                  ),
+                ),
               ],
+            ),
+            // 파도를 화면 하단에 고정
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: SizedBox(height: 150, child: _buildWaveBackground()),
             ),
             if (_isSearching)
               Positioned(
@@ -266,19 +292,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             _buildWaveLayer(
               amplitude: 20,
               wavelength: 200,
-              verticalOffset: 60,
+              verticalOffset: -60,
               color: Colors.blue.withOpacity(0.4),
             ),
             _buildWaveLayer(
-              amplitude: 25,
+              amplitude: 30,
               wavelength: 180,
-              verticalOffset: 90,
+              verticalOffset: -90,
               color: Colors.blue.withOpacity(0.3),
             ),
             _buildWaveLayer(
-              amplitude: 30,
+              amplitude: 40,
               wavelength: 160,
-              verticalOffset: 120,
+              verticalOffset: -120,
               color: Colors.blue.withOpacity(0.2),
             ),
           ],
@@ -286,7 +312,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       },
     );
   }
-
 
   Widget _buildWaveLayer({
     required double amplitude,
@@ -307,10 +332,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-
   Widget _buildSimpleBookItem(Map<String, dynamic> book) {
     return InkWell(
-      onTap: () => _navigateToBookInfo(book), // 수정된 부분: 클릭 시 도서 정보 화면으로 이동
+      onTap: () => _navigateToBookInfo(book),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -358,6 +382,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  // 간소화된 메인 카드 (챌린지 부분 축소)
   Widget _buildMainCard() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -395,51 +420,131 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ),
               ],
             ),
-            const SizedBox(height: 25),
-            const Text('[아몬드 3일만에 읽기] ',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 10),
-            Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                Container(
-                  width: 240,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[300],
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Align(
-              alignment: Alignment.centerRight,
-              child: Text('78%', style: TextStyle(color: Colors.black)),
-            ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 20),
+            // 간소화된 챌린지 시작 버튼
             GestureDetector(
               onTap: () {
                 Navigator.pushNamed(context, '/newChallenge');
               },
               child: Container(
-                height: 50,
+                height: 45,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEE798),
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Center(
                   child: Text('새 챌린지 시작하기',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 새로운 독서 메모 섹션 - 아이콘과 텍스트 색상 수정
+  Widget _buildReadingMemoSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.edit_note,
+                  color: Colors.blue[600],
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  '독서 기록',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '인상 깊은 구절이나 독서 감상을 기록해보세요',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _navigateToReadingMemo,
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEE798), // 노란색
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE6D16A)), // 노란색 테두리
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.add, color: Colors.black, size: 20), // 검은색으로 변경
+                          const SizedBox(width: 8),
+                          const Text(
+                            '새 메모 작성',
+                            style: TextStyle(
+                              color: Colors.black, // 이미 검은색이었음
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _navigateToReadingRecords,
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50], // 파란색
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue[200]!),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.library_books, color: Colors.black, size: 20), // 검은색으로 변경
+                          const SizedBox(width: 8),
+                          const Text(
+                            '기록 보기',
+                            style: TextStyle(
+                              color: Colors.black, // 검은색으로 변경
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
