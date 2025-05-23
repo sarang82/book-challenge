@@ -19,7 +19,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
   bool _isRefreshing = false;
 
   //달력을 위한 변수
-  DateTime _startDate = DateTime.now();
+  DateTime _startDate = DateTime.now().toUtc().add(const Duration(hours: 9));
   DateTime? _endDate;
   final TextEditingController _startDateController = TextEditingController();
   final TextEditingController _endDateController = TextEditingController();
@@ -41,8 +41,8 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
 
   void _showDatePicker(bool isStart) async {
     final DateTime initial = isStart
-        ? (_startDate ?? DateTime.now())
-        : (_endDate ?? (_startDate ?? DateTime.now()));
+        ? (_startDate ?? DateTime.now().toUtc().add(const Duration(hours: 9)))
+        : (_endDate ?? (_startDate ?? DateTime.now().toUtc().add(const Duration(hours: 9))));
 
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -332,7 +332,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                   Expanded(
                     child: TextField(
                       controller: TextEditingController(
-                        text: DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                        text: DateFormat('yyyy-MM-dd').format(_startDate),
                       ),
                       readOnly: true,
                       enabled: false, // 아예 비활성화
