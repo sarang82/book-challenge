@@ -79,7 +79,9 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
     DateTime now = DateTime.now();
     DateTime key = DateTime(now.year, now.month, now.day);
 
-    _readingLog[key] = (_readingLog[key] ?? 0) + seconds;
+    setState(() {
+      _readingLog[key] = (_readingLog[key] ?? 0) + seconds;
+    });
 
     final log = {
       for (var e in _readingLog.entries)
@@ -88,6 +90,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
 
     await _firestore.collection('reading_logs').doc(user!.uid).set({'log': log});
   }
+
 
   void _onItemTapped(int index) {
     if (widget.onTabChanged != null) widget.onTabChanged!(index);
@@ -201,6 +204,11 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                       _selectedDay = selectedDay;
                     });
                   },
+                  onPageChanged: (focusedDay) {
+                    setState(() {
+                      _selectedDay = focusedDay; // ← 여기 추가!
+                    });
+                  },
                   calendarBuilders: CalendarBuilders(
                     defaultBuilder: (context, date, _) {
                       final key = DateTime(date.year, date.month, date.day);
@@ -221,18 +229,19 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                 // 이번 달 누적 시간
                 Builder(
                   builder: (context) {
-                    final now = DateTime.now();
+                    final selectedMonth = DateTime(_selectedDay.year, _selectedDay.month);
+
                     final thisMonthLogs = _readingLog.entries.where((e) {
-                      final entryDate = DateTime(e.key.year, e.key.month, e.key.day);
-                      final today = DateTime(now.year, now.month);
-                      return entryDate.year == today.year && entryDate.month == today.month;
+                      final entryDate = DateTime(e.key.year, e.key.month);
+                      return entryDate.year == selectedMonth.year && entryDate.month == selectedMonth.month;
                     });
+
 
                     final totalSeconds = thisMonthLogs.fold(0, (sum, e) => sum + e.value);
                     print("[READING_LOG] 이번달 누적 시간: $totalSeconds 초, Logs: $thisMonthLogs"); // 누적 시간 디버그
 
                     return Text(
-                      "이번달 나는?\n총 ${totalSeconds ~/ 3600}시간 ${(totalSeconds % 3600) ~/ 60}분 독서했어요.",
+                      "${_selectedDay.month}월 나는?\n총 ${totalSeconds ~/ 3600}시간 ${(totalSeconds % 3600) ~/ 60}분 독서했어요.",
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     );
