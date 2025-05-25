@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
@@ -13,7 +12,9 @@ class ChallengeInfoScreen extends StatefulWidget {
 }
 
 class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
+  //페이지
   late int pagesRead;
+  int totalPagesRead=0;
   //페이지 저장을 위해
   final ChallengeService _challengeService = ChallengeService();
   late String userId; // 실제 사용자 ID
@@ -32,6 +33,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
     if (currentUser != null) {
       userId = currentUser.uid;
       _loadTodayPages();
+      _loadPageReads();
     } else {
       // 로그인 정보 없으면 로그인 화면으로 이동
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -112,12 +114,11 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
   Widget _buildTodayTab() {
 
     //한국 시간으로 보정
-    final nowKST = DateTime.now().toUtc().add(const Duration(hours: 9));
-    final formattedDateKST = "${nowKST.year}-${nowKST.month.toString().padLeft(2, '0')}-${nowKST.day.toString().padLeft(2, '0')}";
-    
-    double progress = widget.challenge.itemPage == 0
-        ? 0
-        : pagesRead / widget.challenge.itemPage;
+    //final nowKST = DateTime.now().toUtc().add(const Duration(hours: 9));
+
+    double progress = totalPagesRead / widget.challenge.itemPage;
+    if (progress > 1.0) progress = 1.0;
+
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -154,7 +155,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
                           fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(
-                    '$pagesRead / ${widget.challenge.itemPage} page',
+                    '$totalPagesRead / ${widget.challenge.itemPage} page',
                     style: const TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ],
@@ -265,6 +266,15 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
     final pages = await _challengeService.getTodayPagesRead(widget.challenge.id, userId);
     setState(() {
       pagesRead = pages;
+    });
+  }
+
+  // 누적 읽은 페이지 불러오기
+  Future<void> _loadPageReads() async {
+    if (userId.isEmpty) return;
+    final total = await _challengeService.getTotalPagesRead(widget.challenge.id, userId);
+    setState(() {
+      totalPagesRead = total;
     });
   }
 

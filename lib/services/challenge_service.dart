@@ -81,6 +81,13 @@ class ChallengeService {
     }
   }
 
+  //누적 페이지 조회
+  Future<int> getTotalPagesRead(String challengeId, String userId) async {
+    final logs = await getAllPagesRead(challengeId, userId);
+    return logs.fold<int>(0, (sum, log) => sum + log.pagesRead);
+  }
+
+
 
 // 오늘 읽은 페이지 저장
   Future<void> saveTodayPagesRead(
