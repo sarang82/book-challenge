@@ -124,7 +124,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('타이머', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        title: const Text('타이머'),
         centerTitle: true,
         bottom: TabBar(
           labelColor: Colors.black,

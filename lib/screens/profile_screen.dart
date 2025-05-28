@@ -137,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('내 정보', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        title: const Text('내 정보'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -187,12 +187,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
             TextButton(
               onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                if (!mounted) return;
-                Navigator.pushReplacementNamed(context, '/login');
+                final shouldLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: Colors.white,
+                    title: const Text('로그아웃'),
+                    content: const Text('로그아웃 하시겠습니까?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('예'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('아니오'),
+                      ),
+
+                    ],
+                  ),
+                );
+
+                if (shouldLogout == true) {
+                  await FirebaseAuth.instance.signOut();
+                  if (!mounted) return;
+                  Navigator.pushReplacementNamed(context, '/login');
+                }
               },
               child: const Text('로그아웃', style: TextStyle(color: Colors.red)),
             )
+
           ],
         ),
       ),

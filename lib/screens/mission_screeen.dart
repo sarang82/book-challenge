@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:intl/intl.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../screens/mission_add_screen.dart';
 
@@ -15,6 +15,7 @@ class MissionScreen extends StatefulWidget {
 
 class _MissionScreenState extends State<MissionScreen> {
   int _selectedIndex = 1;
+  bool _isSortedByNewest = true;
 
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
@@ -51,11 +52,34 @@ class _MissionScreenState extends State<MissionScreen> {
         .where('status', isEqualTo: 'ongoing')
         .get();
 
-    return snapshot.docs.map((doc) => {
-      ...doc.data(),
-      'id': doc.id
-    }).toList();
+    final List<Map<String, dynamic>> validMissions = [];
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final startDate = (data['startDate'] as Timestamp).toDate();
+      final now = DateTime.now();
+
+      final isExpired = now.year > startDate.year ||
+          now.month > startDate.month ||
+          now.day > startDate.day;
+
+      if (isExpired) {
+        // 하루가 지났으면 자동 실패 처리
+        await FirebaseFirestore.instance
+            .collection('missions')
+            .doc(doc.id)
+            .update({'status': 'failed'});
+      } else {
+        validMissions.add({
+          ...data,
+          'id': doc.id,
+        });
+      }
+    }
+
+    return validMissions;
   }
+
 
   Future<List<Map<String, dynamic>>> fetchCompletedMissions() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -67,13 +91,16 @@ class _MissionScreenState extends State<MissionScreen> {
         .where('status', whereIn: ['completed', 'failed'])
         .get();
 
-    return snapshot.docs.map((doc) {
+    // Firestore에서 가져온 리스트
+    final missions = snapshot.docs.map((doc) {
       var data = doc.data();
       return {
         ...data,
         'id': doc.id,
       };
     }).toList();
+
+    return missions;
   }
 
   Future<void> updateMissionStatus(String missionId, String status) async {
@@ -85,6 +112,7 @@ class _MissionScreenState extends State<MissionScreen> {
   }
 
   Widget _buildOngoingMissionsView() {
+
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: fetchOngoingMissions(),
       builder: (context, snapshot) {
@@ -105,7 +133,6 @@ class _MissionScreenState extends State<MissionScreen> {
             return ListTile(
               leading: Image.asset('assets/images/Sea_otter.png', width: 40, height: 40),
               title: Text(mission['title'] ?? '제목 없음'),
-              subtitle: Text(mission['description'] ?? ''),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -127,46 +154,136 @@ class _MissionScreenState extends State<MissionScreen> {
   }
 
   Widget _buildCompletedMissionsView() {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: fetchCompletedMissions(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyMissionView("아직 완료한 미션이 없어요.\n지금 시작해보세요!");
-        }
-
-        final missions = snapshot.data!;
-        return ListView.separated(
-          itemCount: missions.length,
-          separatorBuilder: (context, index) =>
-          const Divider(color: Colors.grey, thickness: 1, height: 1),
-          itemBuilder: (context, index) {
-            final mission = missions[index];
-            final isFailed = mission['status'] == 'failed';
-
-            return ListTile(
-              leading: Image.asset(
-                isFailed
-                    ? 'assets/images/Sea_otter.png'
-                    : 'assets/images/Prize.png',
-                width: 40,
-                height: 40,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _isSortedByNewest = !_isSortedByNewest;
+                  });
+                },
+                icon: Icon(_isSortedByNewest ? Icons.keyboard_arrow_down_outlined : Icons.keyboard_arrow_up_outlined),
+                label: Text(_isSortedByNewest ? "최신순" : "오래된순"),
               ),
-              title: Text(
-                mission['title'] ?? '제목 없음' + (isFailed ? ' (실패)' : ''),
-                style: TextStyle(color:Colors.black),
-              ),
-              subtitle: Text(mission['description'] ?? ''),
-            );
-          },
-        );
-      },
+            ],
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: fetchCompletedMissions(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return _buildEmptyMissionView("아직 완료한 미션이 없어요.\n지금 시작해보세요!");
+              }
+
+              final missions = snapshot.data!;
+
+              // 여기서 endDate 또는 createdAt 기준으로 정렬
+              missions.sort((a, b) {
+                final dateA = (a['endDate'] as Timestamp?)?.toDate() ??
+                    (a['createdAt'] as Timestamp?)?.toDate() ??
+                    DateTime(0);
+                final dateB = (b['endDate'] as Timestamp?)?.toDate() ??
+                    (b['createdAt'] as Timestamp?)?.toDate() ??
+                    DateTime(0);
+
+                return _isSortedByNewest
+                    ? dateB.compareTo(dateA)
+                    : dateA.compareTo(dateB);
+              });
+
+              return ListView.separated(
+                itemCount: missions.length,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                separatorBuilder: (context, index) => const SizedBox(height: 20),
+                itemBuilder: (context, index) {
+                  final mission = missions[index];
+                  final isFailed = mission['status'] == 'failed';
+                  final date = (mission['endDate'] as Timestamp?)?.toDate() ??
+                      (mission['createdAt'] as Timestamp?)?.toDate();
+                  final formattedDate = date != null
+                      ? "${date.year}. ${date.month.toString().padLeft(2, '0')}. ${date.day.toString().padLeft(2, '0')}"
+                      : "";
+
+                  return Column(
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF2F2F2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: Image.asset(
+                                isFailed
+                                    ? 'assets/images/Sea_otter.png'
+                                    : 'assets/images/Prize.png',
+                                width: 70,
+                                height: 70,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  mission['title'] ?? '제목 없음',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isFailed
+                                      ? "미션이 종료됐어요."
+                                      : "미션을 완수했어요!",
+                                  style: TextStyle(
+                                    color: Colors.grey[800],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  formattedDate,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Divider(color: Colors.grey.shade300, height: 1),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
-
 
   Widget _buildEmptyMissionView(String message) {
     final parts = message.split('시작');
