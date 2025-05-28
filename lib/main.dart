@@ -15,6 +15,8 @@ import 'screens/challenge_screen.dart';
 import 'screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'screens/reading_memo_screen.dart';
+import 'screens/reading_records_screen.dart';
 
 // 글로벌 인스턴스로 사용하여 중복 초기화 방지
 final BookDataService bookDataService = BookDataService();
@@ -94,6 +96,8 @@ class MyApp extends StatelessWidget {
         '/mission': (context) => const MissionScreen(),
         '/challenge': (context) => const ChallengeScreen(),
         '/newChallenge': (context) => const ChallengeAddScreen(),
+        '/readingMemo': (context) => const ReadingMemoScreen(),      // 새로 추가
+        '/readingRecords': (context) => const ReadingRecordsScreen(),
       },
     );
   }

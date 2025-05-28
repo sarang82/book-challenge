@@ -9,6 +9,7 @@ import '../widgets/bottom_nav_bar.dart';
 import '../main.dart'; // 글로벌 BookDataService 인스턴스 접근용
 import '../screens/category_detail_screen.dart';
 import '../screens/book_info_screen.dart';
+import '../screens/my_library_category_screen.dart';
 
 class BookTrackingScreen extends StatefulWidget {
   const BookTrackingScreen({super.key});
@@ -227,8 +228,6 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
           // 내 서재 탭
           _isMyLibraryLoading
               ? _buildLoadingIndicator()
-              : _auth.currentUser == null
-              ? _buildLoginPrompt()
               : _buildMyLibraryView(),
         ],
       ),
@@ -241,34 +240,6 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
 
   Widget _buildLoadingIndicator() {
     return const Center(child: CircularProgressIndicator());
-  }
-
-  // 로그인 안내 화면
-  Widget _buildLoginPrompt() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            '내 서재를 이용하려면 로그인이 필요합니다',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // 로그인 화면으로 이동
-              Navigator.pushNamed(context, '/login').then((_) {
-                // 로그인 후 내 서재 데이터 로드
-                if (_auth.currentUser != null) {
-                  _loadMyLibraryData();
-                }
-              });
-            },
-            child: const Text('로그인하기'),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildCustomBookView() {
@@ -364,14 +335,22 @@ class _BookTrackingScreenState extends State<BookTrackingScreen> with SingleTick
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            // 더보기 버튼 추가
+            // 더보기 버튼 - 내 서재 카테고리 화면으로 이동
             IconButton(
               icon: const Icon(Icons.chevron_right),
               onPressed: () {
-                // 해당 카테고리의 상세 페이지로 이동 (미구현)
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('준비 중인 기능입니다')),
-                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MyLibraryCategoryScreen(
+                      title: title,
+                      status: status,
+                    ),
+                  ),
+                ).then((_) {
+                  // 돌아올 때 내 서재 데이터 새로고침
+                  _loadMyLibraryData();
+                });
               },
             ),
           ],
