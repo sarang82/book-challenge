@@ -2,9 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:book_tracking_app/services/mission_service.dart';
 import 'package:book_tracking_app/services/mission_recommend_service.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:math';
 
 class MissionAddScreen extends StatefulWidget {
   const MissionAddScreen({super.key});
@@ -15,34 +13,30 @@ class MissionAddScreen extends StatefulWidget {
 
 class _MissionAddScreenState extends State<MissionAddScreen> {
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
   final MissionService _missionService = MissionService();
 
   DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now(); // 종료 날짜를 시작 날짜와 동일하게
+  DateTime _endDate = DateTime.now();
 
   String? _recommendedMission;
-  String _newMission = '';
 
-  final MissionRecommendationService _missionRecommendationService = MissionRecommendationService(); // 추천 서비스 인스턴스
-
+  final MissionRecommendationService _missionRecommendationService = MissionRecommendationService();
 
   Future<void> _addMission() async {
-    if (_titleController.text.trim().isEmpty || _descriptionController.text.trim().isEmpty) {
+    if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('미션 제목과 설명을 모두 입력해주세요!')),
+        const SnackBar(content: Text('미션 제목을 입력해주세요!')),
       );
       return;
     }
 
-    // Firestore에 미션 추가
     await FirebaseFirestore.instance.collection('missions').add({
       'title': _titleController.text,
-      'description': _descriptionController.text,
+      'description': '', // 미션 설명 제거로 빈 문자열로 저장
       'startDate': _startDate,
       'endDate': _endDate,
       'createdAt': Timestamp.now(),
-      'userId': FirebaseAuth.instance.currentUser?.uid,  // 사용자 ID 추가
+      'userId': FirebaseAuth.instance.currentUser?.uid,
       'status': 'ongoing',
     });
 
@@ -50,23 +44,17 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
       const SnackBar(content: Text('미션이 추가되었습니다!')),
     );
 
-    // 입력 필드 초기화
     _titleController.clear();
-    _descriptionController.clear();
   }
 
-// 랜덤 미션 추천을 위한 함수 (MissionRecommendationService 사용)
   Future<void> _getRandomMission() async {
     try {
       var recommendedMission = await _missionRecommendationService.getRandomMission('독서', '쉬움');
-
-      // 랜덤 미션이 없을 경우 기본값 설정
       setState(() {
-        _recommendedMission = recommendedMission['title'] ?? '기본 미션 제목';  // null이면 기본값 사용
-        _titleController.text = _recommendedMission!;  // 추천 미션을 제목 입력 필드에 설정
+        _recommendedMission = recommendedMission['title'] ?? '기본 미션 제목';
+        _titleController.text = _recommendedMission!;
       });
     } catch (e) {
-      // 에러 발생 시 기본 미션 제목 설정
       setState(() {
         _recommendedMission = '기본 미션 제목';
         _titleController.text = _recommendedMission!;
@@ -78,7 +66,7 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
   @override
   void initState() {
     super.initState();
-    _getRandomMission(); // 앱 시작 시 랜덤 미션 추천
+    _getRandomMission();
   }
 
   @override
@@ -95,7 +83,6 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // 미션 제목 입력 (추천 미션이 자동으로 들어감)
               Row(
                 children: [
                   Expanded(
@@ -106,18 +93,12 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.refresh),
-                    onPressed: _getRandomMission,  // 랜덤 미션 새로 가져오기
+                    onPressed: _getRandomMission,
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              // 미션 설명 입력
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: '미션 설명'),
-              ),
-              const SizedBox(height: 16),
-              // 오늘 날짜 표시
+              // 미션 설명 입력 부분이 제거됨
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 decoration: BoxDecoration(
@@ -130,12 +111,11 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              // 미션 등록 버튼
               Center(
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _addMission,  // Firestore에 미션 등록
+                    onPressed: _addMission,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFFF08A),
                       padding: const EdgeInsets.symmetric(vertical: 16),
