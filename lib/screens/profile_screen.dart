@@ -1,3 +1,4 @@
+// 생략된 import 생략 없이 포함
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';

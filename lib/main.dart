@@ -27,7 +27,6 @@ final BookDataService bookDataService = BookDataService();
 void main() async {
   // Flutter 위젯 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
-
   await dotenv.load(fileName: ".env");
 
   try {
