@@ -40,29 +40,63 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
   String _selectedGoalType = '페이지';
 
   void _showDatePicker(bool isStart) async {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 9)); // 한국 시간 기준 현재
+
     final DateTime initial = isStart
-        ? (_startDate ?? DateTime.now().toUtc().add(const Duration(hours: 9)))
-        : (_endDate ?? (_startDate ?? DateTime.now().toUtc().add(const Duration(hours: 9))));
+        ? (_startDate)
+        : (_endDate ?? _startDate); // 종료일 없으면 시작일 기준
+
+    final DateTime firstDate = isStart
+        ? now // 시작일은 오늘부터 가능
+        : _startDate.isAfter(now) ? _startDate : now; // 종료일은 시작일 또는 오늘 이후부터
+
+    final DateTime lastDate = isStart
+        ? now.add(const Duration(days: 365)) // 시작일 최대 1년 후
+        : _startDate.add(const Duration(days: 365)); // 종료일도 시작일 기준 최대 1년 후
 
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      firstDate: firstDate,
+      lastDate: lastDate,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.blue, // 선택된 날짜, 확인 버튼 색
+              onPrimary: Colors.white, // 확인 버튼 텍스트 색
+              onSurface: Colors.black, // 달력 내 일반 텍스트 색
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: Colors.blue), // 취소 버튼 텍스트 색
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
       setState(() {
+        final formattedDate = DateFormat('yyyy-MM-dd').format(picked);
+
         if (isStart) {
           _startDate = picked;
-          _startDateController.text = '${picked.year}.${picked.month}.${picked.day}';
+          _startDateController.text = formattedDate;
+
+          if (_endDate != null && _endDate!.isBefore(_startDate)) {
+            _endDate = null;
+            _endDateController.text = '';
+          }
         } else {
           _endDate = picked;
-          _endDateController.text = '${picked.year}.${picked.month}.${picked.day}';
+          _endDateController.text = formattedDate;
         }
       });
     }
+
   }
+
 
 
   // 실시간 검색
@@ -84,6 +118,62 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
     });
   }
 
+  Future<void> _createChallenge() async {
+    if (_titleController.text.trim().isEmpty ||
+        _descriptionController.text.trim().isEmpty ||
+        _selectedGoalType.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('모든 필드를 입력해주세요.')),
+      );
+      return;
+    }
+
+    if (_startDate == null || _endDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('시작 날짜와 종료 날짜를 모두 선택해주세요.')),
+      );
+      return;
+    }
+
+    if (_startDate!.isAfter(_endDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('시작 날짜는 종료 날짜보다 빨라야 합니다.')),
+      );
+      return;
+    }
+
+    if (_selectedBook == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('목표 도서를 선택해주세요.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await ChallengeService().createChallenge(
+        title: _titleController.text,
+        type: _selectedGoalType == '타이머 사용' ? '시간' : '페이지',
+        description: _descriptionController.text,
+        startDate: _startDate!,
+        endDate: _endDate!,
+        bookId: _selectedBook?['isbn'] ?? '',
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("챌린지 생성에 성공했습니다!")),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("챌린지 생성에 실패했습니다. 다시 시도해주세요.")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,6 +183,18 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
         title: const Text('챌린지 생성',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         centerTitle: true,
+        actions: [
+          TextButton(
+            onPressed: _isLoading ? null : _createChallenge,
+            child: Text(
+              '등록',
+              style: TextStyle(
+                color: _isLoading ? Colors.grey : Colors.blue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -198,7 +300,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                   ),
                 ),
 
-              SizedBox(height:30),
+              SizedBox(height:40),
 
               //챌린지명
               const Text('새로운 챌린지명을 입력하세요.',
@@ -224,7 +326,8 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                       horizontal: 12, vertical: 14),
                 ),
               ),
-              const SizedBox(height: 30), //각 폼 띄우기..
+
+              const SizedBox(height: 40), //각 폼 띄우기..
 
               //챌린지 설명
               const Text('챌린지에 대한 설명을 입력하세요.',
@@ -279,42 +382,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                 ],
               ),
 
-              SizedBox(height: 30),
-
-              //챌린지 목표 달성 방법
-              const Text('챌린지 목표 달성 방법을 선택하세요.',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,),),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: '매일 읽은 페이지 기록',
-                items: [
-                  DropdownMenuItem(value: '매일 읽은 페이지 기록',
-                      child: Text('매일 읽은 페이지 기록')),
-                  DropdownMenuItem(value: '타이머 사용',
-                      child: Text('타이머 사용')),
-                ],
-                onChanged: (value) {
-                  //선택값 저장할 state 변수
-                  setState(() {
-                    _selectedGoalType = value!;
-                  });
-                },
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w300,
-                ),
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(
-                    borderSide: BorderSide.none, // 테두리 없애기
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
-                ),
-              ),
-              const SizedBox(height: 30),
+              SizedBox(height: 40),
 
               // 챌린지 목표 기간 설정
               const Text(
@@ -335,7 +403,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                         text: DateFormat('yyyy-MM-dd').format(_startDate),
                       ),
                       readOnly: true,
-                      enabled: false, // 아예 비활성화
+                      enabled: false, // 비활성화
                       decoration: const InputDecoration(
                         labelText: '시작 날짜',
                         border: OutlineInputBorder(),
@@ -352,9 +420,17 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                     child: TextField(
                       controller: _endDateController,
                       readOnly: true,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: '종료 날짜',
+                        floatingLabelBehavior: FloatingLabelBehavior.always, // 항상 위에 표시
+                        labelStyle: TextStyle(color: Colors.blue.shade700),
                         border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue.shade700, width:2)
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue.shade700, width:2),
+                        ),
                         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         suffixIcon: Icon(Icons.calendar_today, size: 20),
                       ),
@@ -362,87 +438,6 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                     ),
                   ),
                 ],
-              ),
-
-
-              const SizedBox(height: 30),
-
-
-
-              SizedBox(height: 40),
-              Center(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (_titleController.text
-                          .trim()
-                          .isEmpty ||
-                          _descriptionController.text
-                              .trim()
-                              .isEmpty ||
-                          _selectedGoalType
-                              .trim()
-                              .isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('모든 필드를 입력해주세요.')));
-                        return;
-                      }
-
-                      if (_startDate == null || _endDate == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('시작 날짜와 종료 날짜를 모두 선택해주세요.'))
-                        );
-                        return;
-                      }
-
-                      if (_startDate!.isAfter(_endDate!)) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('시작 날짜는 종료 날짜보다 빨라야 합니다.'))
-                        );
-                        return;
-                      }
-
-                      if (_selectedBook == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('목표 도서를 선택해주세요.')));
-                        return;
-                      }
-
-                      setState(() => _isLoading = true);
-                      try {
-                        await ChallengeService().createChallenge(
-                          title: _titleController.text,
-                          type: _selectedGoalType == '타이머 사용' ? '시간' : '페이지',
-                          description: _descriptionController.text,
-                          startDate: _startDate!,
-                          endDate: _endDate!,
-                          bookId: _selectedBook?['isbn'] ?? '',
-                        );
-
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text("챌린지 생성에 성공했습니다!")));
-                        Navigator.pop(context);
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text("챌린지 생성에 실패했습니다. 다시 시도해주세요.")));
-                      } finally {
-                        setState(() => _isLoading = false);
-                      }
-                    }
-                    ,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFF08A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('등록',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),),
-                  ),
-                ),
               ),
             ],
           ),

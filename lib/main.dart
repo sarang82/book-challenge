@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'screens/reading_memo_screen.dart';
 import 'screens/reading_records_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 // 글로벌 인스턴스로 사용하여 중복 초기화 방지
 final BookDataService bookDataService = BookDataService();
@@ -81,7 +82,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'AI 독서 앱!',
+      title: '톡독',
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ko', 'KR'), // 한국어 지원
+      ],
+      locale: const Locale('ko', 'KR'), // 앱 전체 강제 한국어
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
