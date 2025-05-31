@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'screens/reading_memo_screen.dart';
 import 'screens/reading_records_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // 글로벌 인스턴스로 사용하여 중복 초기화 방지
 final BookDataService bookDataService = BookDataService();
@@ -24,6 +25,8 @@ final BookDataService bookDataService = BookDataService();
 void main() async {
   // Flutter 위젯 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
 
   try {
     // ✅ Kakao SDK 초기화
