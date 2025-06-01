@@ -77,12 +77,16 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
 
     // KST 기준 현재 시각
     final now = DateTime.now().toUtc().add(const Duration(hours: 9));
-    final challengeEndDate = widget.challenge.endDate;
+    final nowDateOnly = DateTime(now.year, now.month, now.day);
+
+    final end = widget.challenge.endDate.toUtc().add(const Duration(hours: 9));
+    final endDateOnly = DateTime(end.year, end.month, end.day);
 
     // 1) pagesRead가 목표 페이지 이상
     // 2) 챌린지 종료일이 지났을 때
     final isChallengeCompleted =
-        (totalPagesRead >= widget.challenge.itemPage) || now.isAfter(challengeEndDate);
+        (totalPagesRead == widget.challenge.itemPage) ||
+            nowDateOnly.isAfter(endDateOnly);
 
     return Scaffold(
       backgroundColor: Colors.white,
