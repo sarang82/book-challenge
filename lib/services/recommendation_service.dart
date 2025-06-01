@@ -6,6 +6,70 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+class IsbnDuplicateChecker {
+  final Set<String> _processedIsbns = <String>{};
+
+  /// ISBN 정규화 (하이픈, 공백 제거하고 13자리로 통일)
+  String _normalizeIsbn(String? isbn) {
+    if (isbn == null || isbn.isEmpty) return '';
+
+    final cleanIsbn = isbn.replaceAll(RegExp(r'[^\d]'), ''); // 숫자만 남김
+
+    // 10자리 ISBN을 13자리로 변환
+    if (cleanIsbn.length == 10) {
+      return '978$cleanIsbn';
+    }
+
+    return cleanIsbn;
+  }
+
+  /// ISBN 중복 확인
+  bool isDuplicateIsbn(Map<String, dynamic> book) {
+    final isbn13 = _normalizeIsbn(book['isbn13']?.toString() ?? book['isbn']?.toString());
+    final isbn = _normalizeIsbn(book['isbn']?.toString());
+
+    // ISBN13 확인
+    if (isbn13.isNotEmpty && _processedIsbns.contains(isbn13)) {
+      print('📚 ISBN 중복: $isbn13 - ${book['title']}');
+      return true;
+    }
+
+    // ISBN 확인 (다른 경우)
+    if (isbn.isNotEmpty && isbn != isbn13 && _processedIsbns.contains(isbn)) {
+      print('📚 ISBN 중복: $isbn - ${book['title']}');
+      return true;
+    }
+
+    return false;
+  }
+
+  /// ISBN을 처리된 목록에 추가
+  void addIsbn(Map<String, dynamic> book) {
+    final isbn13 = _normalizeIsbn(book['isbn13']?.toString() ?? book['isbn']?.toString());
+    final isbn = _normalizeIsbn(book['isbn']?.toString());
+
+    if (isbn13.isNotEmpty) {
+      _processedIsbns.add(isbn13);
+      print('✅ ISBN 등록: $isbn13 - ${book['title']}');
+    }
+
+    if (isbn.isNotEmpty && isbn != isbn13) {
+      _processedIsbns.add(isbn);
+    }
+  }
+
+  /// 초기화
+  void clear() {
+    _processedIsbns.clear();
+  }
+
+  /// 상태 확인 (디버깅용)
+  void printStatus() {
+    print('📊 등록된 ISBN 개수: ${_processedIsbns.length}');
+    print('📚 ISBN 목록: ${_processedIsbns.take(5).join(', ')}${_processedIsbns.length > 5 ? '...' : ''}');
+  }
+}
+
 class RecommendationService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -28,6 +92,8 @@ class RecommendationService {
 
   // 중복 방지용 단순 Set
   final Set<String> _processedBooks = {};
+  // ISBN 중복 검사기 추가
+  final IsbnDuplicateChecker _isbnChecker = IsbnDuplicateChecker();
 
   RecommendationService({String? geminiApiKey}) {
     final apiKey = geminiApiKey ?? dotenv.env['GEMINI_API_KEY'];
@@ -150,6 +216,14 @@ class RecommendationService {
         _normalizeTitle(book['title']?.toString() ?? '')).toSet()
         : <String>{};
 
+    // 사용자 서재 도서들의 ISBN을 미리 등록
+    if (userId != null) {
+      final userBooks = await _getUserBooks(userId);
+      for (final userBook in userBooks) {
+        _isbnChecker.addIsbn(userBook);
+      }
+    }
+
     const batchSize = 5; // 5권씩 병렬 처리로 증가
 
     for (int i = 0; i < geminiBooks.length; i += batchSize) {
@@ -218,7 +292,16 @@ class RecommendationService {
       final aladinBook = await _searchBookByTitle(title);
 
       if (aladinBook != null) {
-        return _createCompleteBookData(aladinBook, geminiBook, recommendationType);
+        final completeBook = _createCompleteBookData(aladinBook, geminiBook, recommendationType);
+
+        // ISBN 중복 확인
+        if (_isbnChecker.isDuplicateIsbn(completeBook)) {
+          return null; // 중복이면 null 반환
+        }
+
+        // 중복이 아니면 ISBN 등록
+        _isbnChecker.addIsbn(completeBook);
+        return completeBook;
       }
 
       return null;
@@ -332,6 +415,7 @@ class RecommendationService {
 
 위 취향을 바탕으로 2025년 한국에서 구매 가능한 실제 도서 15권을 추천해주세요.
 실제 존재하는 정확한 책제목과 저자명만 사용하세요.
+중복된 도서는 절대 추천하지 마세요.
 
 JSON 형식:
 [{"title":"정확한책제목","author":"정확한저자명","genre":"장르"}]
@@ -340,6 +424,7 @@ JSON 형식:
         prompt = """
 2025년 한국에서 인기있는 실제 도서 15권을 JSON으로 추천해주세요.
 다양한 장르로 구성하고, 실제 존재하는 정확한 책제목과 저자명만 사용하세요.
+중복된 도서는 절대 추천하지 마세요.
 
 JSON 형식:
 [{"title":"책제목","author":"저자명","genre":"장르"}]
@@ -395,6 +480,8 @@ JSON 형식:
               'genre': _normalizeGenre(bookData['genre']?.toString() ?? ''),
               'categoryName': bookData['categoryName']?.toString() ?? '',
               'status': status,
+              'isbn': bookData['isbn']?.toString() ?? '', // ISBN 추가
+              'isbn13': bookData['isbn13']?.toString() ?? '', // ISBN13 추가
             });
           }
         }
@@ -483,6 +570,7 @@ JSON 형식:
       'author': aladinBook['author'] ?? geminiBook['author'] ?? '',
       'publisher': aladinBook['publisher'] ?? '',
       'isbn': aladinBook['isbn13'] ?? aladinBook['isbn'] ?? '',
+      'isbn13': aladinBook['isbn13'] ?? '', // ISBN13 필드 추가
       'coverUrl': aladinBook['cover'] ?? '',
       'description': aladinBook['description'] ?? '',
       'pubDate': aladinBook['pubDate'] ?? '',
@@ -660,6 +748,7 @@ JSON 형식:
       if (targetUserId != null) {
         await _firestore.collection(_personalizedCacheCollection).doc(targetUserId).delete();
         _processedBooks.clear();
+        _isbnChecker.clear(); // ISBN 검사기도 초기화
       }
     } catch (e) {
       // 오류 무시
@@ -670,6 +759,7 @@ JSON 형식:
     try {
       await _firestore.collection(_weeklyRecommendationCollection).doc('current').delete();
       _processedBooks.clear();
+      _isbnChecker.clear(); // ISBN 검사기도 초기화
       await getWeeklyRecommendations();
     } catch (e) {
       throw Exception('주간 추천 업데이트 실패: $e');
@@ -699,5 +789,6 @@ JSON 형식:
 
   void resetStreamStates() {
     _processedBooks.clear();
+    _isbnChecker.clear();
   }
 }
