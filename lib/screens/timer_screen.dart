@@ -170,7 +170,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                       onPressed: timerProvider.isRunning ? null : timerProvider.start,
                       child: const Text('시작'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFE232),
+                        backgroundColor: Colors.blue[500]!.withOpacity(0.7),
                         foregroundColor: Colors.black,
                         shape: const CircleBorder(),
                         padding: const EdgeInsets.all(24),
@@ -180,7 +180,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                 ),
                 const SizedBox(height: 30),
                 Text(
-                  "오늘 나는\n${totalToday ~/ 3600}시간 ${(totalToday % 3600) ~/ 60}분\n독서했어요.",
+                  "${totalToday ~/ 3600}시간 ${(totalToday % 3600) ~/ 60}분",
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
@@ -232,7 +232,7 @@ class _TimerScreenState extends State<TimerScreen> with SingleTickerProviderStat
                     print("[READING_LOG] 이번달 누적 시간: $totalSeconds 초, Logs: $thisMonthLogs"); // 누적 시간 디버그
 
                     return Text(
-                      "이번달 나는?\n총 ${totalSeconds ~/ 3600}시간 ${(totalSeconds % 3600) ~/ 60}분 독서했어요.",
+                      "${totalSeconds ~/ 3600}시간 ${(totalSeconds % 3600) ~/ 60}분 독서했어요.",
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                     );

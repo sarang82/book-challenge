@@ -203,10 +203,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.qr_code_scanner, color: Colors.black),
-              onPressed: () {},
-            ),
-            IconButton(
               icon: const Icon(Icons.notifications, color: Colors.black),
               onPressed: () {},
             ),
@@ -430,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 height: 45,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEE798),
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Center(
                   child: Text('새 챌린지 시작하기',
@@ -468,16 +464,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   size: 28,
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  '독서 기록',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: const Text(
+                    '독서 기록',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 12),
             const Text(
               '인상 깊은 구절이나 독서 감상을 기록해보세요',
@@ -497,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       decoration: BoxDecoration(
                         color: const Color(0xFFFEE798), // 노란색
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE6D16A)), // 노란색 테두리
+
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -507,6 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           const Text(
                             '새 메모 작성',
                             style: TextStyle(
+                              fontSize: 16,
                               color: Colors.black, // 이미 검은색이었음
                               fontWeight: FontWeight.w600,
                             ),
@@ -525,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       decoration: BoxDecoration(
                         color: Colors.blue[50], // 파란색
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue[200]!),
+
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -535,6 +536,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           const Text(
                             '기록 보기',
                             style: TextStyle(
+                              fontSize: 16,
                               color: Colors.black, // 검은색으로 변경
                               fontWeight: FontWeight.w600,
                             ),

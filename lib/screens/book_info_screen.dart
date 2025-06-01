@@ -691,7 +691,7 @@ class _AddToLibraryBottomSheetState extends State<AddToLibraryBottomSheet> {
                     controller: _startDateController,
                     readOnly: true,
                     decoration: const InputDecoration(
-                      labelText: '시작일',
+                      labelText: '시작 날짜',
                       border: OutlineInputBorder(),
                       contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       suffixIcon: Icon(Icons.calendar_today, size: 20),

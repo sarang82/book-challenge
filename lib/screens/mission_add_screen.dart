@@ -44,6 +44,7 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
       const SnackBar(content: Text('미션이 추가되었습니다!')),
     );
 
+    Navigator.pop(context, true);
     _titleController.clear();
   }
 
@@ -74,10 +75,28 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('미션 생성', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        title: const Text(
+          '미션 생성',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: _addMission,
+            child: const Text(
+              '등록',
+              style: TextStyle(
+                color: Colors.blue, // 파란색 글씨
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -111,26 +130,6 @@ class _MissionAddScreenState extends State<MissionAddScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              Center(
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _addMission,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFF08A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      '미션 등록',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),

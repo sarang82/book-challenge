@@ -17,6 +17,8 @@ class _MissionScreenState extends State<MissionScreen> {
   int _selectedIndex = 1;
   bool _isSortedByNewest = true;
 
+  Future<List<Map<String, dynamic>>>? _ongoingMissionsFuture;
+
   void _onItemTapped(int index) {
     if (_selectedIndex != index) {
       setState(() {
@@ -40,6 +42,17 @@ class _MissionScreenState extends State<MissionScreen> {
           break;
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOngoingMissions();
+  }
+
+
+  void _loadOngoingMissions() {
+    _ongoingMissionsFuture = fetchOngoingMissions();
   }
 
   Future<List<Map<String, dynamic>>> fetchOngoingMissions() async {
@@ -80,7 +93,6 @@ class _MissionScreenState extends State<MissionScreen> {
     return validMissions;
   }
 
-
   Future<List<Map<String, dynamic>>> fetchCompletedMissions() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
@@ -91,7 +103,6 @@ class _MissionScreenState extends State<MissionScreen> {
         .where('status', whereIn: ['completed', 'failed'])
         .get();
 
-    // Firestore에서 가져온 리스트
     final missions = snapshot.docs.map((doc) {
       var data = doc.data();
       return {
@@ -108,13 +119,15 @@ class _MissionScreenState extends State<MissionScreen> {
         .collection('missions')
         .doc(missionId)
         .update({'status': status});
-    setState(() {});
+    setState(() {
+      _loadOngoingMissions(); // 상태 변경 후에도 reload
+    });
   }
 
   Widget _buildOngoingMissionsView() {
 
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: fetchOngoingMissions(),
+      future: _ongoingMissionsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -127,25 +140,76 @@ class _MissionScreenState extends State<MissionScreen> {
         final missions = snapshot.data!;
         return ListView.separated(
           itemCount: missions.length,
-          separatorBuilder: (context, index) => const Divider(color: Colors.grey, thickness: 1, height: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          separatorBuilder: (context, index) => const SizedBox(height: 20),
           itemBuilder: (context, index) {
             final mission = missions[index];
-            return ListTile(
-              leading: Image.asset('assets/images/Sea_otter.png', width: 40, height: 40),
-              title: Text(mission['title'] ?? '제목 없음'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.check, color: Colors.black),
-                    onPressed: () => updateMissionStatus(mission['id'], 'completed'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black),
-                    onPressed: () => updateMissionStatus(mission['id'], 'failed'),
-                  ),
-                ],
-              ),
+            final date = (mission['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
+            final formattedDate = "${date.year}. ${date.month.toString().padLeft(2, '0')}. ${date.day.toString().padLeft(2, '0')}";
+
+            return Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF2F2F2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/Sea_otter.png',
+                          width: 70,
+                          height: 70,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            mission['title'] ?? '제목 없음',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "미션 진행 중이에요!",
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.check, color: Colors.black),
+                          onPressed: () => updateMissionStatus(mission['id'], 'completed'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.black),
+                          onPressed: () => updateMissionStatus(mission['id'], 'failed'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Divider(color: Colors.grey.shade300, height: 1),
+              ],
             );
           },
         );
@@ -167,7 +231,9 @@ class _MissionScreenState extends State<MissionScreen> {
                     _isSortedByNewest = !_isSortedByNewest;
                   });
                 },
-                icon: Icon(_isSortedByNewest ? Icons.keyboard_arrow_down_outlined : Icons.keyboard_arrow_up_outlined),
+                icon: Icon(_isSortedByNewest
+                    ? Icons.keyboard_arrow_down_outlined
+                    : Icons.keyboard_arrow_up_outlined),
                 label: Text(_isSortedByNewest ? "최신순" : "오래된순"),
               ),
             ],
@@ -187,7 +253,6 @@ class _MissionScreenState extends State<MissionScreen> {
 
               final missions = snapshot.data!;
 
-              // 여기서 endDate 또는 createdAt 기준으로 정렬
               missions.sort((a, b) {
                 final dateA = (a['endDate'] as Timestamp?)?.toDate() ??
                     (a['createdAt'] as Timestamp?)?.toDate() ??
@@ -203,7 +268,8 @@ class _MissionScreenState extends State<MissionScreen> {
 
               return ListView.separated(
                 itemCount: missions.length,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 separatorBuilder: (context, index) => const SizedBox(height: 20),
                 itemBuilder: (context, index) {
                   final mission = missions[index];
@@ -310,8 +376,15 @@ class _MissionScreenState extends State<MissionScreen> {
                     ..onTap = () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const MissionAddScreen()),
-                      );
+                        MaterialPageRoute(
+                            builder: (context) => const MissionAddScreen()),
+                      ).then((value) {
+                        if (value == true) {
+                          setState(() {
+                            _loadOngoingMissions(); // 시작 텍스트 클릭 후 돌아왔을 때 reload
+                          });
+                        }
+                      });
                     },
                 ),
                 TextSpan(text: parts.length > 1 ? parts[1] : ''),
@@ -335,6 +408,23 @@ class _MissionScreenState extends State<MissionScreen> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MissionAddScreen()),
+              ).then((value) {
+                if (value == true) {
+                  setState(() {
+                    _loadOngoingMissions(); // 미션 등록 화면에서 돌아왔을 때 reload
+                  });
+                }
+              });
+            },
+          ),
+        ],
       ),
       body: DefaultTabController(
         length: 2,
@@ -364,17 +454,6 @@ class _MissionScreenState extends State<MissionScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MissionAddScreen()),
-          );
-        },
-        backgroundColor: Colors.white,
-        child: const Icon(Icons.add),
-      ),
-
     );
   }
 }
