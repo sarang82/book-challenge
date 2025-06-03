@@ -1,7 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../services/challenge_service.dart';
 import 'challenge_info_screen.dart';
+import 'challenge_add_screen.dart'; // 챌린지 추가 화면 임포트
 
 class ChallengeScreen extends StatefulWidget {
   const ChallengeScreen({super.key});
@@ -16,39 +18,17 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
   bool _isRefreshing = false;
   late TabController _tabController;
   bool _isLatestFirst = true;
-  bool _isBeforeToday(DateTime d) =>
-      d.toLocal().difference(DateTime.now()).inDays < 0;
-
-  //챌린지 성공/실패
-  bool _isChallengeFailed(Challenge c) =>
-      c.itemPage == 0                // 책 쪽수 못 받아왔으면 무조건 실패
-          ? true
-          : c.pagesRead < c.itemPage; // 누적 쪽수 < 총 쪽수 ➡ 실패
 
   final ChallengeService _challengeService = ChallengeService();
   List<Challenge> _challenges = [];
 
-  void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() => _selectedIndex = index);
-      switch (index) {
-        case 0:
-          Navigator.pushReplacementNamed(context, '/timer');
-          break;
-        case 1:
-          break;
-        case 2:
-          Navigator.pushReplacementNamed(context, '/home');
-          break;
-        case 3:
-          Navigator.pushReplacementNamed(context, '/library');
-          break;
-        case 4:
-          Navigator.pushReplacementNamed(context, '/profile');
-          break;
-      }
-    }
-  }
+  bool _isBeforeToday(DateTime d) =>
+      d.toLocal().difference(DateTime.now()).inDays < 0;
+
+  bool _isChallengeFailed(Challenge c) =>
+      c.itemPage == 0
+          ? true
+          : c.pagesRead < c.itemPage;
 
   @override
   void initState() {
@@ -86,14 +66,12 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
     final formattedDate = "${date.year}. ${date.month.toString().padLeft(2, '0')}. ${date.day.toString().padLeft(2, '0')}";
 
     return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChallengeInfoScreen(challenge: challenge),
-          ),
-        );
-      },
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChallengeInfoScreen(challenge: challenge),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
@@ -101,7 +79,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 이미지 컨테이너 (가로 100, 세로 100)
                 Container(
                   width: 100,
                   height: 100,
@@ -127,12 +104,15 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.book, size: 30, color: Colors.grey),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.book,
+                        size: 30,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                // 텍스트 컬럼 (가운데 정렬, 미션 화면 스타일과 동일)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -152,7 +132,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
                       Text(
                         showResult
                             ? (isFailed ? "챌린지가 종료됐어요." : "챌린지를 완수했어요!")
-                            : challenge.bookTitle, // 여기 수정됨!
+                            : challenge.bookTitle,
                         style: TextStyle(
                           color: Colors.grey[800],
                           fontSize: 14,
@@ -181,23 +161,70 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
     );
   }
 
+  Widget _buildEmptyChallengeView(String message) {
+    final parts = message.split('시작');
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/images/Sea_otter.png',
+            width: 80,
+            color: Colors.grey,
+          ),
+          const SizedBox(height: 16),
+          RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: const TextStyle(color: Colors.grey, fontSize: 16),
+              children: [
+                TextSpan(text: parts[0]),
+                TextSpan(
+                  text: '시작',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    decoration: TextDecoration.underline,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChallengeAddScreen(),
+                        ),
+                      ).then((value) {
+                        if (value == true) _loadInitialData();
+                      });
+                    },
+                ),
+                TextSpan(text: parts.length > 1 ? parts[1] : ''),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final ongoing = _challenges.where((c) =>
-          (c.pagesRead < c.itemPage) && !_isBeforeToday(c.endDate)
-            ).toList();
-
-    // “완료”: (페이지를 다 읽었거나) 또는 (종료일 지남)
+    (c.pagesRead < c.itemPage) && !_isBeforeToday(c.endDate)
+    ).toList();
     final completed = _challenges.where((c) =>
-      (c.pagesRead >= c.itemPage) || _isBeforeToday(c.endDate)
+    (c.pagesRead >= c.itemPage) || _isBeforeToday(c.endDate)
     ).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
-        title: const Text('챌린지', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        title: const Text(
+          '챌린지',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
@@ -215,7 +242,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
           : TabBarView(
         controller: _tabController,
         children: [
-          // 진행 중
+          // 진행 중 탭
           Column(
             children: [
               Padding(
@@ -230,30 +257,34 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
                           _sortChallenges();
                         });
                       },
-                      icon: Icon(_isLatestFirst ? Icons.keyboard_arrow_down_outlined : Icons.keyboard_arrow_up_outlined),
-                      label: Text(_isLatestFirst ? '최신순' : '오래된순'),
+                      icon: Icon(
+                        _isLatestFirst
+                            ? Icons.keyboard_arrow_down_outlined
+                            : Icons.keyboard_arrow_up_outlined,
+                        color: Colors.black87
+                      ),
+                      label: Text(
+                        _isLatestFirst ? '최신순' : '오래된순',
+                        style: TextStyle(color: Colors.black87),
+                      ),
                     ),
                   ],
                 ),
               ),
               Expanded(
                 child: ongoing.isEmpty
-                    ? const Center(child: Text('진행 중인 챌린지가 없습니다.'))
+                    ? _buildEmptyChallengeView('진행 중인 챌린지가 없어요.\n지금 시작해보세요!')
                     : ListView.separated(
                   itemCount: ongoing.length,
-                  itemBuilder: (context, index) {
-                    return _buildChallengeCard(ongoing[index]);
-                  },
-                  separatorBuilder: (context, index) => Column(
-                    children: [
-                      const SizedBox(height: 12),
-                    ],
-                  ),
+                  itemBuilder: (context, index) =>
+                      _buildChallengeCard(ongoing[index]),
+                  separatorBuilder: (context, index) =>
+                  const SizedBox(height: 12),
                 ),
               ),
             ],
           ),
-          // 완료
+          // 완료 탭
           Column(
             children: [
               Padding(
@@ -268,25 +299,29 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
                           _sortChallenges();
                         });
                       },
-                      icon: Icon(_isLatestFirst ? Icons.keyboard_arrow_down_outlined : Icons.keyboard_arrow_up_outlined),
-                      label: Text(_isLatestFirst ? '최신순' : '오래된순'),
+                      icon: Icon(
+                        _isLatestFirst
+                            ? Icons.keyboard_arrow_down_outlined
+                            : Icons.keyboard_arrow_up_outlined,
+                        color:Colors.black87
+                      ),
+                      label: Text(
+                        _isLatestFirst ? '최신순' : '오래된순',
+                        style: TextStyle( color: Colors.black87),
+                      ),
                     ),
                   ],
                 ),
               ),
               Expanded(
                 child: completed.isEmpty
-                    ? const Center(child: Text('완료한 챌린지가 없습니다.'))
+                    ? Center(child: Text('완료한 챌린지가 없습니다.'))
                     : ListView.separated(
                   itemCount: completed.length,
-                  itemBuilder: (context, index) {
-                    return _buildChallengeCard(completed[index], showResult: true);
-                  },
-                  separatorBuilder: (context, index) => Column(
-                    children: [
-                      const SizedBox(height: 12),
-                    ],
-                  ),
+                  itemBuilder: (context, index) =>
+                      _buildChallengeCard(completed[index], showResult: true),
+                  separatorBuilder: (context, index) =>
+                  const SizedBox(height: 12),
                 ),
               ),
             ],
@@ -295,8 +330,28 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        onTap: (i) => _onItemTapped(i),
       ),
     );
+  }
+
+  void _onItemTapped(int index) {
+    if (_selectedIndex != index) {
+      setState(() => _selectedIndex = index);
+      switch (index) {
+        case 0:
+          Navigator.pushReplacementNamed(context, '/timer');
+          break;
+        case 2:
+          Navigator.pushReplacementNamed(context, '/home');
+          break;
+        case 3:
+          Navigator.pushReplacementNamed(context, '/library');
+          break;
+        case 4:
+          Navigator.pushReplacementNamed(context, '/profile');
+          break;
+      }
+    }
   }
 }

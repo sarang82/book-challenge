@@ -223,6 +223,9 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
         ),
         const SizedBox(height: 20),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+          ),
           onPressed: () async {
             final controller = TextEditingController();
 
@@ -230,21 +233,36 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: const Text('오늘 읽은 페이지 수 입력'),
+                  backgroundColor: Colors.white,
+                  title: Text(
+                    '오늘 읽은 페이지 수 입력',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w300
+                    ),
+                  ),
                   content: TextField(
                     controller: controller,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    cursorColor: Colors.blue.shade800,
+                    decoration:InputDecoration(
                       hintText: '숫자 입력',
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.blue.shade700),
+                      ),
                     ),
                   ),
                   actions: [
                     TextButton(
-                      child: const Text('취소'),
+                      child: Text('취소',),
                       onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue.shade700,
+                      ),
                     ),
                     TextButton(
-                      child: const Text('저장'),
+                      child: Text('저장'),
                       onPressed: () {
                         final input = int.tryParse(controller.text);
                         if (input != null && input > 0 && input <= widget.challenge.itemPage) {
@@ -261,6 +279,9 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
                           );
                         }
                       },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue.shade700
+                      )
                     ),
                   ],
                 );
@@ -292,7 +313,12 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
               }
             }
           },
-          child: const Text('오늘 읽은 페이지 입력'),
+          child: Text(
+            '오늘 읽은 페이지 입력',
+            style: TextStyle(
+              color: Colors.blue.shade700,
+            ),
+          ),
         ),
       ],
     );
@@ -408,8 +434,14 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
                   _showProgressDetails = !_showProgressDetails;
                 });
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:  Colors.white,
+              ),
               child: Text(
                 _showProgressDetails ? '뒤로' : '과거 진행률 확인',
+                style: TextStyle(
+                  color: Colors.blue.shade700,
+                ),
               ),
             ),
           ],
@@ -515,8 +547,14 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
                   _showProgressDetails = !_showProgressDetails;
                 });
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor:  Colors.white,
+              ),
               child: Text(
                 _showProgressDetails ? '뒤로' : '과거 진행률 확인',
+                style: TextStyle(
+                  color: Colors.blue.shade700,
+                ),
               ),
             ),
           ],

@@ -185,7 +185,19 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: _isLoading ? null : _createChallenge,
+            onPressed: _isLoading
+                ? null
+                : () async {
+              setState(() {
+                _isLoading = true;
+              });
+
+              await _createChallenge(); // 챌린지 생성 함수
+
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/home'); // 홈으로 이동
+              }
+            },
             child: Text(
               '등록',
               style: TextStyle(
@@ -312,7 +324,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
               TextField(
                 controller: _titleController,
                 decoration: InputDecoration(
-                  hintText: 'ex) 2주 안에 데미안 완독!',
+                  hintText: '챌린지 이름을 입력하세요.',
                   hintStyle: const TextStyle(
                     fontSize: 14,
                   ),
@@ -350,7 +362,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                     }) => null,
                     // 기본 카운터 제거
                     decoration: InputDecoration(
-                      hintText: 'ex) 독후감 대회를 위해 빠르게 완독하기 위한 목적!',
+                      hintText: '챌린지에 대한 설명을 200자 내로 입력해주세요.',
                       hintStyle: const TextStyle(fontSize: 14),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
