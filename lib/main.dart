@@ -58,7 +58,8 @@ void main() async {
     //fcm token
     final fcmToken = await FirebaseMessaging.instance.getToken();
     print("FCM Token: $fcmToken");
-
+    
+    //알림 권한 추가
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,

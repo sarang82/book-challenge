@@ -4,7 +4,8 @@ import 'dart:math' as math;
 import '../services/auth_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../services/book_search_service.dart';
-import '../screens/book_info_screen.dart'; // BookInfoScreen 임포트 추가
+import '../screens/book_info_screen.dart';
+import 'notification_screen.dart'; // BookInfoScreen 임포트 추가
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -204,7 +205,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           actions: [
             IconButton(
               icon: const Icon(Icons.notifications, color: Colors.black),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => NotificationScreen()
+                  ),
+                );
+              },
             ),
           ],
         ),
