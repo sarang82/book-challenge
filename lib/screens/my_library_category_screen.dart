@@ -114,15 +114,19 @@ class _MyLibraryCategoryScreenState extends State<MyLibraryCategoryScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: Colors.grey[300],
+            height: 1.0,
+          ),
+        ),
       ),
       body: _errorMessage != null
           ? _buildErrorView()
           : Column(
         children: [
-          // 상태 정보 및 통계
-          _buildStatusInfo(),
-
-          // 도서 목록
+          // 도서 목록 (상태 정보 박스 제거)
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -146,90 +150,6 @@ class _MyLibraryCategoryScreenState extends State<MyLibraryCategoryScreen> {
         ],
       ),
     );
-  }
-
-  // 상태 정보 표시
-  Widget _buildStatusInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildStatusIcon(),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '총 ${_books.length}권${_getCurrentPageInfo()}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 상태별 아이콘
-  Widget _buildStatusIcon() {
-    IconData iconData;
-    Color iconColor;
-
-    switch (widget.status) {
-      case MyLibraryService.READING:
-        iconData = Icons.menu_book;
-        iconColor = Colors.blue;
-        break;
-      case MyLibraryService.COMPLETED:
-        iconData = Icons.check_circle;
-        iconColor = Colors.green;
-        break;
-      case MyLibraryService.WISHLIST:
-        iconData = Icons.favorite;
-        iconColor = Colors.red;
-        break;
-      default:
-        iconData = Icons.book;
-        iconColor = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(
-        iconData,
-        color: iconColor,
-        size: 24,
-      ),
-    );
-  }
-
-  // 페이지 정보 텍스트
-  String _getCurrentPageInfo() {
-    if (_books.length <= _itemsPerPage) return '';
-    final maxPage = (_books.length / _itemsPerPage).ceil();
-    return ' (페이지 $_currentPage / $maxPage)';
   }
 
   // 빈 상태 표시

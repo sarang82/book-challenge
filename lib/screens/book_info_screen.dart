@@ -316,22 +316,24 @@ class _BookInfoScreenState extends State<BookInfoScreen> with SingleTickerProvid
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          // 우측 상단에 + 버튼 추가
-          _isCheckingLibrary
-              ? const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
+          // ✅ 조건부 +버튼 표시: 로딩 중이거나 이미 서재에 있으면 숨김
+          if (_isCheckingLibrary)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                ),
               ),
+            )
+          else if (_libraryCategory == null) // ✅ 내 서재에 없을 때만 +버튼 표시
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.black),
+              onPressed: _showAddToLibraryBottomSheet,
             ),
-          )
-              : IconButton(
-            icon: const Icon(Icons.add, color: Colors.black),
-            onPressed: _showAddToLibraryBottomSheet,
-          ),
+          // ✅ 내 서재에 있을 때는 아무것도 표시하지 않음
         ],
       ),
       body: _isLoading
@@ -609,180 +611,180 @@ class _AddToLibraryBottomSheetState extends State<AddToLibraryBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
-      child: Padding(
-      padding: EdgeInsets.only(
-        left: 16.0,
-        right: 16.0,
-        top: 16.0,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        color: Colors.white,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16.0,
+            right: 16.0,
+            top: 16.0,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-          // 타이틀
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+              // 타이틀
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const Text(
+                      '내 서재에 책 담기',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 24), // 정렬을 위한 빈 공간
+                  ],
                 ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 독서 상태 선택
+              const Text(
+                '독서 상태',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // 독서 상태 버튼들
+              Row(
+                children: [
+                  _buildCategoryButton('완독한 도서', MyLibraryService.COMPLETED),
+                  const SizedBox(width: 8),
+                  _buildCategoryButton('읽고 있는 책', MyLibraryService.READING),
+                  const SizedBox(width: 8),
+                  _buildCategoryButton('읽고 싶은 책', MyLibraryService.WISHLIST),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // 읽기 시작일/완료일 (해당되는 경우만)
+              if (_selectedCategory == MyLibraryService.READING ||
+                  _selectedCategory == MyLibraryService.COMPLETED) ...[
                 const Text(
-                  '내 서재에 책 담기',
+                  '독서 기간',
                   style: TextStyle(
-                    fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
-                const SizedBox(width: 24), // 정렬을 위한 빈 공간
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    // 시작일
+                    Expanded(
+                      child: TextField(
+                        controller: _startDateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: '시작 날짜',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          suffixIcon: Icon(Icons.calendar_today, size: 20),
+                        ),
+                        onTap: () => _selectDate(context, true),
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // 완료일 (완독한 도서인 경우만)
+                    if (_selectedCategory == MyLibraryService.COMPLETED)
+                      Expanded(
+                        child: TextField(
+                          controller: _endDateController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: '완료일',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            suffixIcon: Icon(Icons.calendar_today, size: 20),
+                          ),
+                          onTap: () => _selectDate(context, false),
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
               ],
-            ),
-          ),
 
-          const SizedBox(height: 16),
+              // 저장 버튼
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _addToLibrary,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : const Text(
+                    '저장',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
 
-          // 독서 상태 선택
-          const Text(
-            '독서 상태',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // 독서 상태 버튼들
-          Row(
-            children: [
-              _buildCategoryButton('완독한 도서', MyLibraryService.COMPLETED),
-              const SizedBox(width: 8),
-              _buildCategoryButton('읽고 있는 책', MyLibraryService.READING),
-              const SizedBox(width: 8),
-              _buildCategoryButton('읽고 싶은 책', MyLibraryService.WISHLIST),
+              // 삭제 버튼 (기존에 추가된 도서인 경우)
+              if (widget.existingCategory != null) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _removeFromLibrary,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      '내 서재에서 삭제',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-
-          const SizedBox(height: 24),
-
-          // 읽기 시작일/완료일 (해당되는 경우만)
-          if (_selectedCategory == MyLibraryService.READING ||
-              _selectedCategory == MyLibraryService.COMPLETED) ...[
-            const Text(
-              '독서 기간',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                // 시작일
-                Expanded(
-                  child: TextField(
-                    controller: _startDateController,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: '시작 날짜',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      suffixIcon: Icon(Icons.calendar_today, size: 20),
-                    ),
-                    onTap: () => _selectDate(context, true),
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // 완료일 (완독한 도서인 경우만)
-                if (_selectedCategory == MyLibraryService.COMPLETED)
-                  Expanded(
-                    child: TextField(
-                      controller: _endDateController,
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: '완료일',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        suffixIcon: Icon(Icons.calendar_today, size: 20),
-                      ),
-                      onTap: () => _selectDate(context, false),
-                    ),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-          ],
-
-          // 저장 버튼
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _addToLibrary,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-                  : const Text(
-                '저장',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-
-          // 삭제 버튼 (기존에 추가된 도서인 경우)
-          if (widget.existingCategory != null) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: OutlinedButton(
-                onPressed: _isLoading ? null : _removeFromLibrary,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '내 서재에서 삭제',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    )
+        )
     );
   }
 
@@ -917,7 +919,6 @@ class BookInfoContent extends StatelessWidget {
         // 탭 섹션
         BookInfoTabs(tabController: tabController),
 
-        // 탭 콘텐츠 - Expanded로 감싸서 남은 공간을 모두 사용하게 함
         // 탭 콘텐츠 - Expanded로 감싸서 남은 공간을 모두 사용하게 함
         Expanded(
           child: TabBarView(
