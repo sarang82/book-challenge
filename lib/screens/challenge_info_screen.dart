@@ -120,7 +120,19 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
+          // 챌린지 설명 추가
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              widget.challenge.description,
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(height: 8),
           Text(
             '${widget.challenge.startDate.toLocal().toString().split(' ')[0]} - '
                 '${widget.challenge.endDate.toLocal().toString().split(' ')[0]}',
@@ -129,7 +141,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
           const SizedBox(height: 12),
 
           // ────────────────────────────────────────────────────────────────
-          // DefaultTabController: “오늘의 여정” vs “히스토리” 탭
+          // DefaultTabController: "오늘의 여정" vs "히스토리" 탭
           // ────────────────────────────────────────────────────────────────
           DefaultTabController(
             length: 2,
@@ -171,7 +183,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
   }
 
   // ────────────────────────────────────────────────────────────────────────
-  // “오늘의 여정” (진행 중) 화면
+  // "오늘의 여정" (진행 중) 화면
   // ────────────────────────────────────────────────────────────────────────
   Widget _buildTodayTab(double progress) {
     return Column(
@@ -237,9 +249,9 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
                   title: Text(
                     '오늘 읽은 페이지 수 입력',
                     style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w300
+                        color: Colors.black,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w300
                     ),
                   ),
                   content: TextField(
@@ -262,26 +274,26 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
                       ),
                     ),
                     TextButton(
-                      child: Text('저장'),
-                      onPressed: () {
-                        final input = int.tryParse(controller.text);
-                        if (input != null && input > 0 && input <= widget.challenge.itemPage) {
-                          Navigator.of(context).pop(input);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                input == null || input <= 0
-                                    ? '올바른 숫자를 입력해주세요'
-                                    : '전체 페이지 수(${widget.challenge.itemPage}) 이상 입력할 수 없습니다',
+                        child: Text('저장'),
+                        onPressed: () {
+                          final input = int.tryParse(controller.text);
+                          if (input != null && input > 0 && input <= widget.challenge.itemPage) {
+                            Navigator.of(context).pop(input);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  input == null || input <= 0
+                                      ? '올바른 숫자를 입력해주세요'
+                                      : '전체 페이지 수(${widget.challenge.itemPage}) 이상 입력할 수 없습니다',
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.blue.shade700
-                      )
+                            );
+                          }
+                        },
+                        style: TextButton.styleFrom(
+                            foregroundColor: Colors.blue.shade700
+                        )
                     ),
                   ],
                 );
@@ -326,22 +338,22 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
 
 
   // ────────────────────────────────────────────────────────────────────────
-  // “완료 정보” (실패 or 성공) 화면 ─────────────────────────────────────────────
+  // "완료 정보" (실패 or 성공) 화면 ─────────────────────────────────────────────
   //
-  // Case 2: 실패하지 않고 “성공” (pagesRead ≥ itemPage, 기간 남아있음 or 기간 경과)
-  // Case 3: “기간 경과”로 인해 실패 (pagesRead < itemPage, 기간 경과)
+  // Case 2: 실패하지 않고 "성공" (pagesRead ≥ itemPage, 기간 남아있음 or 기간 경과)
+  // Case 3: "기간 경과"로 인해 실패 (pagesRead < itemPage, 기간 경과)
   //
   // 두 경우 모두 이 메서드가 호출됩니다. 내부에서 pagesRead와 종료일을 체크하여
-  // - Case 2 → “성공” UI
-  // - Case 3 → “실패” UI (“과거 진행률 확인” 버튼 포함)
+  // - Case 2 → "성공" UI
+  // - Case 3 → "실패" UI ("과거 진행률 확인" 버튼 포함)
   // ────────────────────────────────────────────────────────────────────────
   Widget _buildFailureOrSuccessTab(double progress, bool isChallengeCompleted) {
-    // “완료 성공” (pagesRead ≥ itemPage, 기간 남았든 경과했든 상관없이 모두 성공 간주)
+    // "완료 성공" (pagesRead ≥ itemPage, 기간 남았든 경과했든 상관없이 모두 성공 간주)
     if (totalPagesRead >= widget.challenge.itemPage) {
       return _buildSuccessTab(progress);
     }
 
-    // “실패” (pagesRead < itemPage & 기간 경과) → _buildFailureTab 반환
+    // "실패" (pagesRead < itemPage & 기간 경과) → _buildFailureTab 반환
     return _buildFailureTab(progress);
   }
 
@@ -358,7 +370,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (!_showProgressDetails) ...[
-              // “성공 메시지” 영역
+              // "성공 메시지" 영역
               const SizedBox(height: 40),
               const Icon(
                 Icons.emoji_events,
@@ -382,7 +394,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
               ),
               const SizedBox(height: 16),
             ] else ...[
-              // “그래프” 영역 (토글 후 표시)
+              // "그래프" 영역 (토글 후 표시)
               const SizedBox(height: 40),
               Container(
                 width: 200,
@@ -427,7 +439,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
             ],
 
             const SizedBox(height: 16),
-            // “과거 진행률 확인” ↔ “뒤로” 버튼
+            // "과거 진행률 확인" ↔ "뒤로" 버튼
             ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -452,7 +464,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
 
 
   // ────────────────────────────────────────────────────────────────────────
-  // 케이스 3 (기간 경과로 인한 실패) 전용 위젯: “챌린지를 완료하지 못했습니다” 메시지 → 접히는 “과거 진행률 확인” 버튼
+  // 케이스 3 (기간 경과로 인한 실패) 전용 위젯: "챌린지를 완료하지 못했습니다" 메시지 → 접히는 "과거 진행률 확인" 버튼
   // ────────────────────────────────────────────────────────────────────────
   bool _showProgressDetails = false;
 
@@ -540,7 +552,7 @@ class _ChallengeInfoScreenState extends State<ChallengeInfoScreen> {
             ],
 
             const SizedBox(height: 16),
-            // “과거 진행률 확인” / “뒤로” 버튼
+            // "과거 진행률 확인" / "뒤로" 버튼
             ElevatedButton(
               onPressed: () {
                 setState(() {

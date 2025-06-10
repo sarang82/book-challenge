@@ -315,28 +315,55 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
               SizedBox(height:40),
 
               //챌린지명
-              const Text('새로운 챌린지명을 입력하세요.',
+              const Text(
+                '새로운 챌린지명을 입력하세요.',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,),
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 10),
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: '챌린지 이름을 입력하세요.',
-                  hintStyle: const TextStyle(
-                    fontSize: 14,
+              Stack(
+                children: [
+                  TextField(
+                    controller: _titleController,
+                    maxLength: 20, // 글자수 제한
+                    buildCounter: (BuildContext context, {
+                      required int currentLength,
+                      required bool isFocused,
+                      required int? maxLength,
+                    }) => null, // 기본 카운터 제거
+                    decoration: InputDecoration(
+                      hintText: '챌린지 이름을 입력하세요.',
+                      hintStyle: const TextStyle(fontSize: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: const Color(0xFFF7F7F7),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                    ),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
+                  Positioned(
+                    right: 16,
+                    bottom: 8,
+                    child: ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _titleController,
+                      builder: (context, value, child) {
+                        final currentLength = value.text.length;
+                        return Text(
+                          '$currentLength/20',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  filled: true,
-                  fillColor: const Color(0xFFF7F7F7),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 14),
-                ),
+                ],
               ),
 
               const SizedBox(height: 40), //각 폼 띄우기..
@@ -353,7 +380,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                   TextField(
                     controller: _descriptionController,
                     maxLines: 5,
-                    maxLength: 200,
+                    maxLength: 50,
                     // 텍스트 길이 제한은 유지
                     buildCounter: (BuildContext context, {
                       required int currentLength,
@@ -362,7 +389,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                     }) => null,
                     // 기본 카운터 제거
                     decoration: InputDecoration(
-                      hintText: '챌린지에 대한 설명을 200자 내로 입력해주세요.',
+                      hintText: '챌린지에 대한 설명을 50자 내로 입력해주세요.',
                       hintStyle: const TextStyle(fontSize: 14),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -382,7 +409,7 @@ class _ChallengeAddScreenState extends State<ChallengeAddScreen> with SingleTick
                       builder: (context, value, child) {
                         final currentLength = value.text.length;
                         return Text(
-                          '$currentLength/200',
+                          '$currentLength/50',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.grey,
