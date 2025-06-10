@@ -55,6 +55,7 @@ dependencies {
     // OpenGL 관련 경고를 해결하기 위한 추가 의존성
     implementation("androidx.window:window:1.0.0")
     implementation("androidx.window:window-java:1.0.0")
+
 }
 
 flutter {

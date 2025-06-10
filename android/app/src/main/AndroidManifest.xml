@@ -1,30 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.book_tracking_app">
 
+    <!-- 인터넷 권한 추가 -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
 
     <application
         android:label="book_tracking_app"
-        android:icon="@mipmap/ic_launcher">
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true">
 
+        <!-- Firebase 및 Google Play Services 설정 -->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
+        <!-- Firebase 앱 ID 설정 -->
         <meta-data
             android:name="google_app_id"
             android:value="1:57159075316:android:839745be9e8053ec02e5a1" />
 
+        <!-- Firebase 프로젝트 ID -->
         <meta-data
             android:name="project_id"
             android:value="talkdok-cf1b4" />
 
+        <!-- Kakao SDK App Key -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
             android:value="3994fcb20cffde63abe5d0db12a3a7ed" />
+        <meta-data
+            android:name="com.naver.sdk.clientId"
+            android:value="PLHdaznm0rzZR_ejyPhp" />
+        <meta-data
+            android:name="com.naver.sdk.clientSecret"
+            android:value="O5s1TxHiiE" />
+        <meta-data
+            android:name="com.naver.sdk.clientName"
+            android:value="톡독" />
 
+        <!-- Kakao 로그인 관련 Activity -->
+        <activity
+            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
+            android:exported="true">
+            <intent-filter android:label="flutter_web_auth">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="kakao3994fcb20cffde63abe5d0db12a3a7ed"
+                    android:host="oauth" />
+            </intent-filter>
+        </activity>
+
+        <!-- 앱 메인 Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -42,8 +75,20 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- 네이버 로그인 콜백 URL 설정 -->
+            <intent-filter android:label="flutter_web_auth_naver">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- 네이버 로그인 리디렉션 URI를 앱 스킴으로 설정 -->
+                <data android:scheme="naverlogin" />
+
+            </intent-filter>
+
         </activity>
 
+        <!-- Flutter 설정 -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

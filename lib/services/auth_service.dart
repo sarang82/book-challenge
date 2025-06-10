@@ -1,7 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao_user;
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore
+import 'package:google_sign_in/google_sign_in.dart'; // Google Sign In
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao_user; // Kakao SDK
+import 'package:http/http.dart' as http; // HTTP 요청용
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -93,6 +94,7 @@ class AuthService {
   // 로그아웃
   Future<void> logout() async {
     await _auth.signOut();
+    await _googleSignIn.signOut();
   }
 
   // 구글 로그인
@@ -165,6 +167,48 @@ class AuthService {
     }
   }
 
+  // 네이버 로그인
+  Future<UserCredential> signInWithNaver() async {
+    try {
+      final authUrl = Uri.https('nid.naver.com', '/oauth2.0/authorize', {
+        'response_type': 'code',
+        'client_id': 'YOUR_NAVER_CLIENT_ID',
+        'redirect_uri': 'YOUR_REDIRECT_URI', // 예: https://yourapp.com/callback
+        'state': DateTime.now().millisecondsSinceEpoch.toString(),
+      });
+
+      final response = await http.get(authUrl);
+
+      if (response.statusCode == 200) {
+        final String token = response.body; // 실제 네이버에서 받은 토큰을 사용
+        final OAuthCredential credential = OAuthProvider('naver.com').credential(
+          accessToken: token,
+        );
+
+        final userCredential = await _auth.signInWithCredential(credential);
+
+        final user = userCredential.user;
+        if (user != null) {
+          // Firestore에 네이버 사용자 정보 저장
+          await _firestore.collection('users').doc(user.uid).set({
+            'nickname': '네이버 사용자',
+            'email': user.email ?? '',
+            'kakao_uid': user.uid,
+            'photoUrl': user.photoURL ?? '',
+            'createdAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+
+        return userCredential;
+      } else {
+        throw Exception('네이버 로그인 실패: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Naver 로그인 실패: $e');
+    }
+  }
+
+  // 현재 사용자 가져오기
   // 현재 유저
   User? get currentUser => _auth.currentUser;
 
