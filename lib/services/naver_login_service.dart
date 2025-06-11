@@ -8,18 +8,19 @@ class NaverLoginService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> signInWithNaver(BuildContext context) async {
-    final clientId = 'PLHdaznm0rzZR_ejyPhp'; // 네이버 앱 등록 시 발급받은 client_id
+    final clientId = 'PLHdaznm0rzZR_ejyPhp'; // 네이버 앱 client_id
     final redirectUri = 'https://authcustomtoken-lczljd5ldq-uc.a.run.app/naver'; // Firebase Functions 콜백 URL
-    final state = DateTime.now().millisecondsSinceEpoch.toString(); // CSRF 방지용 state
+    final state = DateTime.now().millisecondsSinceEpoch.toString();
 
-    // force_login=true와 force_logout=true로 파라미터 추가하여 항상 로그인 페이지가 뜨도록 설정
+    // 항상 로그인 화면 띄우도록 force_login, force_logout, prompt 파라미터 추가
     final authUrl = Uri.https('nid.naver.com', '/oauth2.0/authorize', {
       'response_type': 'code',
       'client_id': clientId,
       'redirect_uri': redirectUri,
       'state': state,
-      'force_login': 'true', // 강제 로그인 파라미터
-      'force_logout': 'true', // 강제 로그아웃 파라미터 추가
+      'force_login': 'true',
+      'force_logout': 'true',
+      'prompt': 'login',
     });
 
     try {
@@ -70,19 +71,28 @@ class NaverLoginWebView extends StatefulWidget {
 }
 
 class _NaverLoginWebViewState extends State<NaverLoginWebView> {
-  late final WebViewController _controller;
+  late WebViewController _controller;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // 웹뷰 초기화
+    _initWebView();
+  }
+
+  Future<void> _initWebView() async {
+    final cookieManager = WebViewCookieManager();
+
+    // 쿠키와 캐시 완전 삭제
+    await cookieManager.clearCookies();
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
             if (url.startsWith('https://authcustomtoken-lczljd5ldq-uc.a.run.app/naver')) {
-              Navigator.pop(context, url); // 인증 코드 추출용 리디렉션 URL 감지
+              Navigator.pop(context, url); // 인증 코드 감지 시 종료 및 전달
             }
           },
           onWebResourceError: (error) {
@@ -91,15 +101,23 @@ class _NaverLoginWebViewState extends State<NaverLoginWebView> {
             );
           },
         ),
-      )
-      ..loadRequest(Uri.parse(widget.authUrl)); // 로그인 URL로 웹뷰 로드
+      );
+
+    await _controller.clearCache();
+    await _controller.loadRequest(Uri.parse(widget.authUrl));
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('네이버 로그인')),
-      body: WebViewWidget(controller: _controller),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : WebViewWidget(controller: _controller),
     );
   }
 }

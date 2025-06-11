@@ -37,21 +37,15 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // 로그인 함수
   void _login() async {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
-
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('로그인 성공!')),
       );
-
-      //홈 화면으로 이동
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
-
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('로그인 실패: ${e.message}')),
@@ -123,14 +117,10 @@ class _LoginPageState extends State<LoginPage> {
               const Icon(Icons.arrow_back),
               const SizedBox(height: 40),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
                     '매일 새로운 도전,\n톡톡',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(width: 24),
                   Transform.rotate(
@@ -148,12 +138,9 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              const Text(
-                '로그인 후 이용 가능합니다.',
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 8),
+              const Text('로그인 후 이용 가능합니다.', style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 40),
               TextField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -186,18 +173,12 @@ class _LoginPageState extends State<LoginPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('비밀번호를 잊으셨나요?', style: TextStyle(fontSize: 12)),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignUpScreen()),
-                      );
-                    },
-                    child: const Text(
-                      '회원가입',
-                      style: TextStyle(fontSize: 12),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignUpScreen()),
                     ),
+                    child: const Text('회원가입', style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
@@ -213,14 +194,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   onPressed: _login,
-                  child: const Text(
-                    '로그인',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: const Text('로그인', style: TextStyle(fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -248,7 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                   GestureDetector(
                     onTap: _signInWithGoogle,
                     child: CircleAvatar(
-                      backgroundColor: Colors.white,
+                      backgroundColor: Color(0xFFF5F5F5),
                       radius: 25,
                       child: Image.asset('assets/images/googleicon.png', width: 30, height: 30),
                     ),
